@@ -63,6 +63,9 @@ export default function Sidebar({
         </div>
 
         <div className="sidebar-footer">
+          <div className="download-info">
+            💾 Save this page (Ctrl/Cmd+S) to run offline!
+          </div>
           <a
             href="https://github.com/jonromero/llm-council-in-the-browser"
             target="_blank"

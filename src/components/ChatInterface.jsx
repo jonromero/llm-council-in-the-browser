@@ -100,6 +100,15 @@ export default function ChatInterface({
 
   return (
     <div className="chat-interface">
+      {isLoading && (
+        <div className="processing-banner">
+          <div className="banner-icon">⏳</div>
+          <div className="banner-content">
+            <strong>Generating Comprehensive Report</strong>
+            <p>The council is analyzing your question across multiple AI models. This process may take several minutes. Please do not close this page.</p>
+          </div>
+        </div>
+      )}
       <div className="messages-container">
         {conversation.messages.length === 0 ? (
           <div className="empty-state">

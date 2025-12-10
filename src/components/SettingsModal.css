@@ -1,7 +1,7 @@
 .modal-overlay {
     position: fixed;
     inset: 0;
-    background-color: rgba(0, 0, 0, 0.7);
+    background-color: rgba(0, 0, 0, 0.5);
     backdrop-filter: blur(4px);
     display: flex;
     align-items: center;
@@ -11,13 +11,13 @@
 }
 
 .modal-content {
-    background-color: #1a1a1a;
+    background-color: #ffffff;
     padding: 24px;
     border-radius: 12px;
     width: 600px;
     max-width: 90vw;
-    color: #fff;
-    border: 1px solid #333;
+    color: #333;
+    border: 1px solid #e0e0e0;
     box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
     animation: scaleIn 0.2s ease-out;
 }
@@ -48,7 +48,7 @@
     font-size: 20px;
     font-weight: 700;
     margin-bottom: 20px;
-    color: #60a5fa;
+    color: #2563eb;
 }
 
 .form-group {
@@ -60,17 +60,17 @@
     font-size: 14px;
     font-weight: 500;
     margin-bottom: 6px;
-    color: #e0e0e0;
+    color: #333;
 }
 
 .input-field,
 .textarea-field {
     width: 100%;
-    background-color: #2a2a2a;
-    border: 1px solid #444;
+    background-color: #ffffff;
+    border: 2px solid #e0e0e0;
     border-radius: 6px;
     padding: 10px;
-    color: #fff;
+    color: #333;
     font-size: 14px;
     transition: border-color 0.2s, box-shadow 0.2s;
     font-family: inherit;
@@ -80,7 +80,7 @@
 .textarea-field:focus {
     outline: none;
     border-color: #3b82f6;
-    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
 }
 
 .textarea-field {
@@ -92,7 +92,7 @@
 
 .help-text {
     font-size: 12px;
-    color: #888;
+    color: #666;
     margin-top: 4px;
 }
 
@@ -118,12 +118,13 @@
 }
 
 .btn-cancel {
-    background-color: #333;
-    color: #e0e0e0;
+    background-color: #f0f0f0;
+    color: #666;
+    border: 1px solid #e0e0e0;
 }
 
 .btn-cancel:hover {
-    background-color: #444;
+    background-color: #e5e5e5;
 }
 
 .btn-save {

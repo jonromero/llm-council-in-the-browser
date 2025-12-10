@@ -10,30 +10,42 @@ const IntroModal = ({ isOpen, onClose }) => {
                 <h2>Welcome to LLM Council</h2>
                 <div className="intro-badge">Client-Side Edition</div>
 
-                <p>
-                    This project is a <strong>standalone client-side fork</strong> of <a href="https://github.com/karpathy/llm-council" target="_blank" rel="noopener noreferrer">karpathy/llm-council</a>, created by <strong>Jon V</strong> (actually Claude and Antigravity but you get the point).
+                <div className="hero-description">
+                    <p className="hero-text">
+                        Have <strong>four AIs be your personal council</strong>. They research your question individually,
+                        <strong> vote for the best answers</strong>, then a <strong>Chairman AI</strong> synthesizes the final response by combining their insights.
+                    </p>
+                </div>
+
+                <div className="info-grid">
+                    <div className="info-box-compact">
+                        <span className="info-icon">🔒</span>
+                        <div className="info-content">
+                            <strong>Privacy First</strong>
+                            <p>Runs locally in your browser. All data stored in localStorage.</p>
+                        </div>
+                    </div>
+
+                    <div className="info-box-compact">
+                        <span className="info-icon">💾</span>
+                        <div className="info-content">
+                            <strong>Download & Run Offline</strong>
+                            <p>Save this page (Ctrl/Cmd+S) to run completely offline.</p>
+                        </div>
+                    </div>
+
+                    <div className="info-box-compact">
+                        <span className="info-icon">🔑</span>
+                        <div className="info-content">
+                            <strong>Setup Required</strong>
+                            <p>You'll need an OpenRouter API Key (free models available!).</p>
+                        </div>
+                    </div>
+                </div>
+
+                <p className="credits">
+                    Fork of <a href="https://github.com/karpathy/llm-council" target="_blank" rel="noopener noreferrer">karpathy/llm-council</a> by <strong>Jon V</strong> (actually Claude and Antigravity but you get the point).
                 </p>
-
-                <div className="info-box">
-                    <h3>🔒 Privacy First</h3>
-                    <p>
-                        Everything runs locally in your browser. All conversations and settings are stored in <code>localStorage</code>. No backend server is required.
-                    </p>
-                </div>
-
-                <div className="info-box">
-                    <h3>💾 Download & Run Offline</h3>
-                    <p>
-                        You can download this entire app as a single HTML file and run it completely offline. Just save the page (Ctrl/Cmd+S) or download from GitHub releases.
-                    </p>
-                </div>
-
-                <div className="info-box">
-                    <h3>🔑 Setup Required</h3>
-                    <p>
-                        You will need an <strong>OpenRouter API Key</strong> to use this application. Free models are available and work great!
-                    </p>
-                </div>
 
                 <button onClick={onClose} className="btn-primary intro-btn">
                     Get Started

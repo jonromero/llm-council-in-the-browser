@@ -35,6 +35,9 @@ jobs:
       - name: Build production bundle
         run: npm run build
 
+      - name: Copy CNAME to build directory 
+        run: cp CNAME ./dist
+
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:

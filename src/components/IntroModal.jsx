@@ -11,7 +11,7 @@ const IntroModal = ({ isOpen, onClose }) => {
                 <div className="intro-badge">Client-Side Edition</div>
 
                 <p>
-                    This project is a <strong>standalone client-side fork</strong> of <a href="https://github.com/karpathy/llm-council" target="_blank" rel="noopener noreferrer">karpathy/llm-council</a>, created by <strong>Jon V</strong>.
+                    This project is a <strong>standalone client-side fork</strong> of <a href="https://github.com/karpathy/llm-council" target="_blank" rel="noopener noreferrer">karpathy/llm-council</a>, created by <strong>Jon V</strong> (actually Claude and Antigravity but you get the point).
                 </p>
 
                 <div className="info-box">

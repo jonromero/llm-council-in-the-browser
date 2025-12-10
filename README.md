@@ -77,7 +77,7 @@ A backend-free, client-side only version of the [LLM Council](https://github.com
 
 Based on the original [LLM Council](https://github.com/karpathy/llm-council) by [Andrej Karpathy](https://github.com/karpathy). 
 
-This client-side version was created by [Jon V](https://github.com/jonromero) to run entirely in the browser without requiring a backend server.
+This client-side version was created by [Jon V](https://github.com/jonromero) to run entirely in the browser without requiring a backend server (actually Claude and Antigravity but you get the point)
 
 ## License
 

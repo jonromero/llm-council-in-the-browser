@@ -89,6 +89,15 @@ function App() {
   const handleSendMessage = async (content) => {
     if (!currentConversationId || !isConfigured) return;
 
+    // Check if API key is configured
+    if (!openRouterApiKey) {
+      setNotification({
+        type: 'error',
+        message: 'Please configure your OpenRouter API Key in Settings before asking questions.'
+      });
+      return;
+    }
+
     setIsLoading(true);
 
     // 1. Save user message

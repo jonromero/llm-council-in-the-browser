@@ -1,9 +1,11 @@
-name: Deploy to GitHub Pages
+name: Build and Deploy to GitHub Pages
 
 on:
   push:
-    branches:
-      - master
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -17,9 +19,9 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -30,8 +32,11 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Build
+      - name: Build production bundle
         run: npm run build
+
+      - name: Copy CNAME to build directory 
+        run: cp CNAME ./dist
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3

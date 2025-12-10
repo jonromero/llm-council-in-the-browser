@@ -37,6 +37,56 @@ export default function ChatInterface({
     }
   };
 
+  const handlePrint = (content) => {
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+      alert('Please allow popups to print the report.');
+      return;
+    }
+
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>LLM Council Report</title>
+          <style>
+            body {
+              font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+              line-height: 1.6;
+              color: #000;
+              max-width: 800px;
+              margin: 40px auto;
+              padding: 20px;
+            }
+            h1 { font-size: 24px; border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 20px; }
+            h2 { font-size: 18px; margin-top: 20px; color: #333; }
+            pre { background: #f5f5f5; padding: 10px; border-radius: 4px; overflow-x: auto; }
+            code { font-family: 'Menlo', 'Monaco', 'Courier New', monospace; font-size: 0.9em; }
+            @media print {
+              body { margin: 0; padding: 0.5cm; }
+            }
+          </style>
+        </head>
+        <body>
+          <h1>LLM Council Final Report</h1>
+          <div class="content">
+            <!-- We'll use a simple pre-wrap for now to preserve formatting, or could import a markdown renderer cdn -->
+            <div style="white-space: pre-wrap;">${content.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div>
+          </div>
+          <script>
+            window.onload = function() {
+              window.print();
+              // Optional: window.close();
+            }
+          </script>
+        </body>
+      </html>
+    `;
+
+    printWindow.document.write(htmlContent);
+    printWindow.document.close();
+  };
+
   if (!conversation) {
     return (
       <div className="chat-interface">
@@ -53,8 +103,8 @@ export default function ChatInterface({
       <div className="messages-container">
         {conversation.messages.length === 0 ? (
           <div className="empty-state">
-            <h2>Start a conversation</h2>
-            <p>Ask a question to consult the LLM Council</p>
+            <h2>Ask the Council</h2>
+            <p>Type your question below to consult multiple AI models</p>
           </div>
         ) : (
           conversation.messages.map((msg, index) => (
@@ -103,7 +153,18 @@ export default function ChatInterface({
                       <span>Running Stage 3: Final synthesis...</span>
                     </div>
                   )}
-                  {msg.stage3 && <Stage3 finalResponse={msg.stage3} />}
+                  {msg.stage3 && (
+                    <div className="stage3-container">
+                      <Stage3 finalResponse={msg.stage3} />
+                      <button
+                        className="print-btn"
+                        onClick={() => handlePrint(msg.stage3.response)}
+                        title="Print Final Report"
+                      >
+                        🖨️ Print Report
+                      </button>
+                    </div>
+                  )}
                 </div>
               )}
             </div>

@@ -1,0 +1,60 @@
+.intro-modal-content {
+    text-align: center;
+    max-width: 500px;
+}
+
+.intro-badge {
+    display: inline-block;
+    background: rgba(96, 165, 250, 0.2);
+    color: #60a5fa;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    margin-bottom: 24px;
+}
+
+.modal-content p {
+    color: #ccc;
+    line-height: 1.6;
+    margin-bottom: 24px;
+}
+
+.modal-content a {
+    color: #60a5fa;
+    text-decoration: none;
+}
+
+.modal-content a:hover {
+    text-decoration: underline;
+}
+
+.info-box {
+    background: #252525;
+    border: 1px solid #333;
+    border-radius: 8px;
+    padding: 16px;
+    text-align: left;
+    margin-bottom: 16px;
+}
+
+.info-box h3 {
+    font-size: 16px;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.info-box p {
+    margin-bottom: 0;
+    font-size: 14px;
+    color: #888;
+}
+
+.intro-btn {
+    width: 100%;
+    margin-top: 12px;
+    padding: 12px;
+    font-size: 16px;
+}

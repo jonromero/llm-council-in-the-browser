@@ -87,7 +87,7 @@ function App() {
   };
 
   const handleSendMessage = async (content) => {
-    if (!currentConversationId || !isConfigured) return;
+    if (!currentConversationId) return;
 
     // Check if API key is configured
     if (!openRouterApiKey) {

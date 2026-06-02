@@ -1347,7 +1347,18 @@ function App() {
     else if (!isConfigured) setShowSettings(true);
   }, []);
 
-  useEffect(() => { loadConvs(); }, []);
+  useEffect(() => {
+    const list = storage.list();
+    setConvs(list);
+    // Always land on a conversation — use the most recent or create a new one
+    if (list.length > 0) {
+      setCurrentId(list[0].id);
+    } else {
+      const c = storage.create();
+      setConvs(storage.list());
+      setCurrentId(c.id);
+    }
+  }, []);
   useEffect(() => { if (currentId) setConversation(storage.get(currentId)); else setConversation(null); }, [currentId]);
 
 

@@ -43,9 +43,10 @@ Back up conversations, settings, and cost stats to a JSON file — or restore fr
 ![Export / Import](readmedata/export.png)
 
 ### Token & Cost Tracking
-Per-conversation usage bar under the input, plus a session total in the sidebar.
+Session total in the sidebar, and a per-conversation usage bar under the input.
 
-![Cost Tracking](readmedata/cost.png)
+![Cost Sidebar](readmedata/cost-sidebar.png)
+![Cost Bar](readmedata/cost-bar.png)
 
 ---
 

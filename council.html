@@ -1,0 +1,1500 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>~^ LLM Council</title>
+<style>
+/* ═══════════════════════════════════════════
+   ~^ LLM Council — lastmachine.com aesthetic
+   Light · Monospace · Minimal · No build step
+   ═══════════════════════════════════════════ */
+:root {
+  --bg:      #fefefe;
+  --bg1:     #f6f6f3;
+  --bg2:     #ededea;
+  --border:  #d8d8d0;
+  --border2: #c4c4bc;
+  --text:    #1a1a16;
+  --dim:     #5c5c56;
+  --faint:   #a8a8a0;
+  --accent:  #1a1a16;
+  --danger:  #c83030;
+  --mono: 'SF Mono','Fira Code','Fira Mono','Roboto Mono',Menlo,Monaco,Consolas,'Courier New',monospace;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{background:var(--bg);color:var(--text);font-family:var(--mono);font-size:13px;line-height:1.65;-webkit-font-smoothing:antialiased}
+a{color:var(--dim);text-decoration:underline;text-underline-offset:2px}
+a:hover{color:var(--accent)}
+button{font-family:var(--mono);cursor:pointer}
+input,textarea,select{font-family:var(--mono);background:var(--bg2);color:var(--text);border:1px solid var(--border2);padding:7px 10px;font-size:13px;outline:none}
+input:focus,textarea:focus{border-color:var(--dim)}
+
+/* ── Layout ── */
+#root{height:100vh;width:100vw;overflow:hidden;display:flex}
+.app{display:flex;width:100%;height:100%;overflow:hidden}
+
+/* ── Sidebar ── */
+.sidebar{width:220px;flex-shrink:0;background:var(--bg1);border-right:1px solid var(--border);display:flex;flex-direction:column;height:100vh;transition:transform .2s}
+.sb-head{padding:16px 14px 12px;border-bottom:1px solid var(--border)}
+.sb-logo{font-size:20px;font-weight:700;color:var(--accent);letter-spacing:-1px;display:block;margin-bottom:4px;text-decoration:none}
+.sb-logo small{display:block;font-size:10px;font-weight:400;color:var(--faint);letter-spacing:2px;text-transform:uppercase;margin-top:2px}
+.sb-btn{display:block;width:100%;padding:7px 10px;background:transparent;border:1px solid var(--border2);color:var(--dim);font-size:12px;text-align:left;margin-bottom:5px;transition:color .15s,border-color .15s;letter-spacing:.3px}
+.sb-btn:hover{color:var(--accent);border-color:var(--dim)}
+.sb-btn.primary{color:var(--text)}
+.sb-btn.primary::before{content:'+ ';color:var(--faint)}
+.sb-list{flex:1;overflow-y:auto;padding:8px 6px;scrollbar-width:thin;scrollbar-color:var(--border2) transparent}
+.sb-list::-webkit-scrollbar{width:2px}
+.sb-list::-webkit-scrollbar-thumb{background:var(--border2)}
+.sb-empty{padding:14px;color:var(--faint);font-size:12px}
+.conv-item{padding:7px 10px;margin-bottom:2px;cursor:pointer;border:1px solid transparent;display:flex;justify-content:space-between;align-items:center;transition:border-color .15s}
+.conv-item:hover{border-color:var(--border)}
+.conv-item.active{border-color:var(--border2);background:var(--bg2)}
+.conv-item.active .conv-title::before{content:'> ';color:var(--dim)}
+.conv-title{font-size:12px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:150px}
+.conv-meta{font-size:10px;color:var(--faint);margin-top:1px}
+.conv-del{background:transparent;border:none;color:var(--faint);font-size:14px;padding:2px 5px;opacity:0;transition:opacity .15s,color .15s}
+.conv-item:hover .conv-del{opacity:1}
+.conv-del:hover{color:var(--danger)}
+.sb-foot{padding:10px 14px;border-top:1px solid var(--border)}
+.sb-foot-link{display:block;color:var(--faint);font-size:10px;text-decoration:none;margin-bottom:6px}
+.sb-foot-link:hover{color:var(--dim)}
+.sb-foot-text{font-size:10px;color:var(--faint);line-height:1.5;margin-bottom:6px}
+.sb-cost{font-size:10px;color:var(--dim);border:1px solid var(--border);background:var(--bg2);padding:5px 8px;display:flex;flex-direction:column;gap:2px}
+.sb-cost-lbl{font-size:9px;color:var(--faint);letter-spacing:1px;text-transform:uppercase}
+.sb-cost-val{font-weight:700;color:var(--text)}
+.sb-cost-sub{font-size:9px;color:var(--faint)}
+
+/* ── Chat main ── */
+.chat-main{flex:1;display:flex;flex-direction:column;height:100vh;overflow:hidden;position:relative}
+.msgs{flex:1;overflow-y:auto;padding:24px 28px;display:flex;flex-direction:column;gap:28px;padding-bottom:130px;scrollbar-width:thin;scrollbar-color:var(--border2) transparent}
+.msgs::-webkit-scrollbar{width:3px}
+.msgs::-webkit-scrollbar-thumb{background:var(--border2)}
+.empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;color:var(--faint);text-align:center;gap:8px}
+.empty-logo{font-size:32px;font-weight:700;color:var(--border2);letter-spacing:-2px;margin-bottom:8px}
+.empty-hint{font-size:11px;color:var(--faint)}
+
+/* ── Processing banner ── */
+.proc-banner{margin:12px 28px 0;border:1px solid var(--border2);background:var(--bg1);padding:10px 14px;display:flex;align-items:center;gap:12px;font-size:12px;color:var(--dim)}
+.proc-banner strong{color:var(--text);display:block;margin-bottom:2px}
+
+/* ── Messages ── */
+.msg-group{display:flex;flex-direction:column;gap:6px;max-width:860px;margin:0 auto;width:100%}
+.msg-label{font-size:10px;color:var(--faint);text-transform:uppercase;letter-spacing:1.5px;padding-left:2px;margin-bottom:4px}
+.user-msg .msg-content{background:var(--bg1);border:1px solid var(--border);padding:10px 14px;color:var(--text);max-width:80%;margin-left:auto}
+.attach-row{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:6px}
+.attach-chip{font-size:11px;color:var(--dim);border:1px solid var(--border2);padding:2px 7px;background:var(--bg2)}
+.stage-loading{display:flex;align-items:center;gap:10px;color:var(--dim);font-size:12px;padding:10px 0}
+.assistant-msg{display:flex;flex-direction:column;gap:12px;width:100%}
+
+/* ── Input form ── */
+.input-wrap{position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,var(--bg) 24%);padding:16px 28px 20px;max-width:920px;margin:0 auto;width:100%}
+.attach-preview{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
+.ap-chip{display:inline-flex;align-items:center;gap:5px;border:1px solid var(--border2);background:var(--bg1);padding:3px 8px;font-size:11px;color:var(--dim);max-width:180px}
+.ap-chip img{width:24px;height:24px;object-fit:cover;flex-shrink:0}
+.ap-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}
+.ap-del{background:none;border:none;color:var(--faint);font-size:13px;padding:0;flex-shrink:0}
+.ap-del:hover{color:var(--danger)}
+.input-row{display:flex;align-items:flex-end;gap:8px}
+.attach-btn{background:transparent;border:1px solid var(--border2);color:var(--dim);width:36px;height:36px;font-size:16px;display:flex;align-items:center;justify-content:center;flex-shrink:0;align-self:flex-end;transition:border-color .15s,color .15s}
+.attach-btn:hover:not(:disabled){color:var(--text);border-color:var(--dim)}
+.attach-btn:disabled{opacity:.3;cursor:not-allowed}
+.msg-input{flex:1;background:var(--bg1);border:1px solid var(--border2);color:var(--text);padding:9px 12px;resize:none;font-size:13px;line-height:1.5;transition:border-color .15s}
+.msg-input:focus{border-color:var(--dim)}
+.msg-input::placeholder{color:var(--faint)}
+.send-btn{background:transparent;border:1px solid var(--border2);color:var(--dim);padding:0 16px;height:36px;font-size:12px;letter-spacing:.5px;align-self:flex-end;transition:color .15s,border-color .15s;white-space:nowrap}
+.send-btn:hover:not(:disabled){color:var(--accent);border-color:var(--dim)}
+.send-btn:disabled{opacity:.3;cursor:not-allowed}
+.stop-btn{background:transparent;border:1px solid var(--danger);color:var(--danger);padding:0 16px;height:36px;font-size:12px;letter-spacing:.5px;align-self:flex-end;transition:all .15s;white-space:nowrap}
+.stop-btn:hover{background:var(--danger);color:#fff}
+.print-btn{align-self:flex-start;background:transparent;border:1px solid var(--border);color:var(--faint);padding:5px 10px;font-size:11px;transition:color .15s,border-color .15s}
+.print-btn:hover{color:var(--dim);border-color:var(--dim)}
+.stage3-wrap{display:flex;flex-direction:column;gap:8px}
+
+/* ── Stage headers ── */
+.arena-hdr{display:flex;align-items:center;gap:8px;margin-bottom:7px;font-size:12px}
+.arena-lbl{font-weight:700;color:var(--text);background:var(--bg2);border:1px solid var(--border2);padding:2px 8px;letter-spacing:1px}
+.arena-sub{color:var(--dim);letter-spacing:.3px}
+.arena-cnt{margin-left:auto;color:var(--faint);font-size:11px}
+
+/* ── Stage 1 arena grid ── */
+.arena-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:2px;background:var(--border);border:1px solid var(--border2)}
+.panel{background:var(--bg);border-top:2px solid var(--pc,#4a9be8);display:flex;flex-direction:column;min-height:240px;max-height:380px;overflow:hidden}
+.panel-head{display:flex;align-items:center;justify-content:space-between;padding:5px 9px;background:var(--bg1);border-bottom:1px solid var(--border);flex-shrink:0;min-height:30px}
+.panel-name{background:none;border:none;font-family:var(--mono);font-size:12px;font-weight:700;cursor:pointer;padding:2px 4px;display:flex;align-items:center;gap:5px;flex:1;text-align:left;letter-spacing:.3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.panel-name:hover{background:rgba(0,0,0,.04)}
+.edit-hint{font-size:9px;opacity:0;transition:opacity .15s;flex-shrink:0}
+.panel-name:hover .edit-hint{opacity:.5}
+.panel-redo{background:none;border:1px solid var(--border2);color:var(--dim);width:24px;height:24px;font-size:13px;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .15s}
+.panel-redo:hover:not(:disabled){color:var(--pc,#1a1a16);border-color:var(--pc,#1a1a16)}
+.panel-redo:disabled{opacity:.25;cursor:not-allowed}
+.panel-edit-row{display:flex;align-items:center;gap:4px;flex:1}
+.panel-edit-inp{flex:1;background:var(--bg2);border:1px solid var(--pc,#4a9be8);color:var(--text);font-family:var(--mono);font-size:11px;padding:2px 6px;outline:none}
+.panel-edit-ok,.panel-edit-x{background:none;border:1px solid var(--border2);color:var(--dim);width:20px;height:20px;font-size:10px}
+.panel-edit-ok:hover{color:#2a8a30;border-color:#2a8a30}
+.panel-edit-x:hover{color:var(--danger);border-color:var(--danger)}
+.panel-model-id{font-size:9px;color:var(--faint);padding:1px 9px;border-bottom:1px solid var(--border);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex-shrink:0}
+.panel-body{flex:1;overflow-y:auto;padding:10px;scrollbar-width:thin;scrollbar-color:var(--border2) transparent}
+.panel-body::-webkit-scrollbar{width:3px}
+.panel-body::-webkit-scrollbar-thumb{background:var(--border2)}
+.panel-loading{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;height:100%;min-height:140px;font-size:12px}
+.panel-spin{width:20px;height:20px;border:1px solid var(--border2);border-top-color:var(--pc,#4a9be8);border-radius:50%;animation:spin .8s linear infinite}
+.panel-empty{color:var(--faint);font-size:11px}
+/* Markdown inside panels — light */
+.panel-md{font-size:12px;line-height:1.6;color:var(--text)}
+.panel-md p{color:var(--text);margin-bottom:8px}
+.panel-md p:last-child{margin-bottom:0}
+.panel-md h1,.panel-md h2,.panel-md h3{color:var(--text);font-size:12px;font-weight:700;margin:10px 0 5px;text-transform:uppercase;letter-spacing:.5px}
+.panel-md code{background:var(--bg2);color:#1a5080;padding:1px 4px;font-size:11px;border:1px solid var(--border)}
+.panel-md pre{background:var(--bg2);border:1px solid var(--border);padding:8px;overflow-x:auto;margin-bottom:8px}
+.panel-md pre code{background:none;padding:0;border:none;color:#1a5080}
+.panel-md ul,.panel-md ol{color:var(--text);padding-left:18px;margin-bottom:8px}
+.panel-md li{margin-bottom:3px}
+.panel-md strong{color:var(--text);font-weight:700}
+.panel-md em{color:var(--dim)}
+.panel-md blockquote{border-left:2px solid var(--border2);padding-left:10px;color:var(--dim);margin-bottom:8px}
+.panel-md a{color:#1a5080}
+.panel-md table{width:100%;border-collapse:collapse;font-size:11px;margin-bottom:8px}
+.panel-md th,.panel-md td{border:1px solid var(--border);padding:4px 8px}
+.panel-md th{background:var(--bg2);color:var(--dim)}
+
+/* ── Stage 2 leaderboard ── */
+.leaderboard{background:var(--bg1);border:1px solid var(--border2);padding:12px 14px;margin-bottom:8px}
+.lb-title{font-size:10px;font-weight:700;color:var(--faint);letter-spacing:2px;margin-bottom:10px}
+.lb-row{display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--border);font-size:11px}
+.lb-row:last-child{border-bottom:none}
+.lb-rank{font-size:13px;width:22px;text-align:center;flex-shrink:0}
+.lb-model{font-weight:700;width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex-shrink:0}
+.lb-bar{flex:1;height:4px;background:var(--border);overflow:hidden}
+.lb-fill{height:100%;transition:width .3s}
+.lb-score{font-size:11px;font-weight:700;width:32px;text-align:right;flex-shrink:0}
+.lb-votes{font-size:9px;color:var(--faint);width:16px;flex-shrink:0}
+.evals-hdr{font-size:10px;color:var(--faint);letter-spacing:1.5px;font-weight:700;margin:10px 0 5px;display:flex;gap:8px;align-items:center}
+.eval-hint{font-size:10px;font-weight:400;letter-spacing:.5px;color:var(--border2)}
+.eval-list{display:flex;flex-direction:column;gap:2px}
+.eval-card{background:var(--bg1);border:1px solid var(--border);border-left:2px solid var(--ec,#4a9be8);overflow:hidden}
+.eval-card.open{border-color:var(--ec,#4a9be8)}
+.eval-head{display:flex;align-items:center;gap:8px;padding:7px 10px;background:none;border:none;cursor:pointer;width:100%;text-align:left}
+.eval-head:hover{background:rgba(0,0,0,.03)}
+.eval-model{font-family:var(--mono);font-size:12px;font-weight:700;flex-shrink:0;min-width:90px}
+.eval-mini{display:flex;gap:4px;flex:1;flex-wrap:wrap}
+.eval-badge{font-size:9px;color:var(--dim);background:var(--bg2);border:1px solid var(--border);padding:1px 5px;white-space:nowrap}
+.eval-chev{color:var(--faint);font-size:9px;margin-left:auto;flex-shrink:0}
+.eval-body{border-top:1px solid var(--border);padding:12px;background:var(--bg2)}
+.eval-text{font-size:12px;line-height:1.6;color:var(--text);max-height:300px;overflow-y:auto}
+.eval-text p{color:var(--text);margin-bottom:8px}
+.eval-text strong{color:var(--text)}
+.eval-text code{background:var(--bg1);color:#1a5080;padding:1px 4px;font-size:11px;border:1px solid var(--border)}
+.eval-text pre{background:var(--bg1);border:1px solid var(--border);padding:8px;overflow-x:auto}
+.eval-text ul,.eval-text ol{color:var(--text);padding-left:18px}
+.eval-parsed{display:flex;align-items:center;flex-wrap:wrap;gap:6px;margin-top:10px;padding-top:8px;border-top:1px solid var(--border)}
+.eval-parsed-lbl{font-size:9px;color:var(--faint);letter-spacing:1px;text-transform:uppercase}
+.eval-parsed-item{font-size:11px;font-weight:700}
+
+/* ── Stage 3 verdict ── */
+.verdict{background:#f2fcf8;border:1px solid #b0e4d0;border-top:2px solid #2aa880}
+.verdict-head{display:flex;align-items:center;justify-content:space-between;padding:6px 12px;background:#e8f8f2;border-bottom:1px solid #b0e4d0}
+.verdict-title{font-size:10px;font-weight:700;color:#1a6040;letter-spacing:2px}
+.verdict-model{font-size:9px;color:#80b8a0}
+.verdict-body{padding:16px 18px;font-size:13px;line-height:1.75;color:#1a3a28}
+.verdict-body p{color:#1a3a28;margin-bottom:11px}
+.verdict-body p:last-child{margin-bottom:0}
+.verdict-body h1,.verdict-body h2,.verdict-body h3{color:#0e2818;font-size:13px;font-weight:700;margin:14px 0 7px;text-transform:uppercase;letter-spacing:.5px}
+.verdict-body code{background:#e2f4ec;color:#1a6040;padding:1px 5px;font-size:12px;border:1px solid #b0e4d0}
+.verdict-body pre{background:#eaf8f0;border:1px solid #b0e4d0;padding:10px;overflow-x:auto;margin-bottom:11px}
+.verdict-body pre code{background:none;padding:0;border:none;color:#1a6040}
+.verdict-body ul,.verdict-body ol{color:#1a3a28;padding-left:20px;margin-bottom:11px}
+.verdict-body li{margin-bottom:4px}
+.verdict-body strong{color:#0e2818;font-weight:700}
+.verdict-body a{color:#2aa880}
+.verdict-body blockquote{border-left:2px solid #b0e4d0;padding-left:12px;color:#3a8060;margin-bottom:11px}
+.verdict-body table{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:11px}
+.verdict-body th,.verdict-body td{border:1px solid #b0e4d0;padding:5px 9px;color:#1a3a28}
+.verdict-body th{background:#e8f8f2;color:#1a6040}
+
+/* ── Modals ── */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:1000;display:flex;align-items:center;justify-content:center;animation:fadeIn .15s}
+.modal{background:var(--bg);border:1px solid var(--border2);padding:24px;width:580px;max-width:92vw;max-height:88vh;overflow-y:auto;animation:scaleIn .15s}
+.modal-title{font-size:15px;font-weight:700;color:var(--text);margin-bottom:20px;letter-spacing:.5px}
+.modal-section{border:1px solid var(--border);padding:14px;margin-bottom:14px;background:var(--bg1)}
+.modal-section-title{font-size:11px;font-weight:700;color:var(--dim);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.modal-badge{font-size:10px;color:var(--faint);background:var(--bg2);padding:1px 6px;border:1px solid var(--border)}
+.form-group{margin-bottom:12px}
+.form-group label{display:block;font-size:11px;color:var(--dim);margin-bottom:5px;text-transform:uppercase;letter-spacing:.8px}
+.form-input{width:100%;background:var(--bg);border:1px solid var(--border2);color:var(--text);padding:7px 10px;font-size:13px;font-family:var(--mono);outline:none;transition:border-color .15s}
+.form-input:focus{border-color:var(--dim)}
+.form-textarea{width:100%;background:var(--bg);border:1px solid var(--border2);color:var(--text);padding:7px 10px;font-size:12px;font-family:var(--mono);height:100px;resize:vertical;outline:none;transition:border-color .15s}
+.form-textarea:focus{border-color:var(--dim)}
+.help-text{font-size:11px;color:var(--faint);margin-top:4px;line-height:1.4}
+.help-link{color:var(--dim);text-underline-offset:2px}
+.sql-details{margin-top:8px;border:1px solid var(--border)}
+.sql-details summary{padding:6px 10px;font-size:11px;color:var(--faint);cursor:pointer;background:var(--bg2);user-select:none}
+.sql-details summary:hover{color:var(--dim)}
+
+/* ── Toggle switch ── */
+.toggle-wrap{display:flex;align-items:center;gap:10px;cursor:pointer;user-select:none}
+.toggle-track{width:34px;height:18px;border:1px solid var(--border2);background:var(--bg2);position:relative;flex-shrink:0;transition:background .2s,border-color .2s}
+.toggle-track.on{background:#1a7a40;border-color:#1a7a40}
+.toggle-thumb{position:absolute;top:2px;left:2px;width:12px;height:12px;background:var(--faint);transition:left .2s,background .2s}
+.toggle-track.on .toggle-thumb{left:18px;background:#fff}
+.toggle-label{font-size:11px;color:var(--dim);letter-spacing:.3px}
+.toggle-label.on{color:var(--text);font-weight:700}
+.section-fields{overflow:hidden;transition:opacity .2s}
+.section-fields.hidden{opacity:.35;pointer-events:none}
+.sql-block{font-size:11px;background:var(--bg1);color:var(--dim);padding:10px;overflow-x:auto;white-space:pre;font-family:var(--mono);line-height:1.5}
+.modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:16px;border-top:1px solid var(--border);padding-top:16px}
+.btn-cancel{background:transparent;border:1px solid var(--border2);color:var(--dim);padding:7px 16px;font-size:12px;transition:all .15s}
+.btn-cancel:hover{color:var(--text);border-color:var(--dim)}
+.btn-save{background:transparent;border:1px solid var(--border2);color:var(--text);padding:7px 16px;font-size:12px;transition:all .15s;font-weight:700}
+.btn-save:hover{border-color:var(--text);background:var(--bg2)}
+
+/* Export/Import modal */
+.export-check-row{display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border:1px solid var(--border);margin-bottom:6px;cursor:pointer;transition:border-color .15s}
+.export-check-row:hover{border-color:var(--border2)}
+.export-check-row input[type=checkbox]{margin-top:2px;flex-shrink:0;accent-color:var(--accent);width:14px;height:14px}
+.export-check-label{font-size:12px;color:var(--text);font-weight:700;display:block;margin-bottom:2px}
+.export-check-desc{font-size:11px;color:var(--faint)}
+.export-warn{font-size:11px;color:#806020;border:1px solid #c0a040;background:#fffff0;padding:8px 12px;margin-bottom:12px}
+.import-drop{border:1px dashed var(--border2);padding:20px;text-align:center;font-size:12px;color:var(--faint);cursor:pointer;transition:border-color .15s,color .15s;margin-bottom:8px}
+.import-drop:hover{border-color:var(--dim);color:var(--dim)}
+.import-result{font-size:11px;padding:8px 12px;border:1px solid var(--border);margin-top:8px}
+.import-result.ok{color:#2a8040;border-color:#80c890}
+.import-result.err{color:var(--danger);border-color:var(--danger)}
+
+/* Intro modal */
+.intro-content{text-align:center;max-width:520px}
+.intro-symbol{font-size:40px;font-weight:700;color:var(--border2);letter-spacing:-3px;margin-bottom:12px}
+.intro-title{font-size:17px;font-weight:700;color:var(--text);margin-bottom:8px}
+.intro-desc{color:var(--dim);font-size:13px;line-height:1.7;margin-bottom:20px}
+.intro-steps{text-align:left;border:1px solid var(--border);margin-bottom:20px}
+.intro-step{display:flex;gap:10px;padding:10px 14px;border-bottom:1px solid var(--border)}
+.intro-step:last-child{border-bottom:none}
+.intro-step-n{color:var(--faint);flex-shrink:0;width:20px}
+.intro-step-txt{font-size:12px;color:var(--dim)}
+.intro-step-txt strong{color:var(--text);display:block;margin-bottom:2px}
+.intro-btn{width:100%;padding:10px;background:transparent;border:1px solid var(--border2);color:var(--text);font-size:13px;font-family:var(--mono);transition:all .15s}
+.intro-btn:hover{border-color:var(--text);background:var(--bg2)}
+
+/* Notification */
+.notif{position:fixed;bottom:20px;right:20px;z-index:2000;background:var(--bg);border:1px solid var(--border2);padding:10px 14px;max-width:360px;font-size:12px;display:flex;gap:10px;align-items:flex-start;animation:slideUp .2s;box-shadow:0 2px 8px rgba(0,0,0,.1)}
+.notif.error{border-color:var(--danger);color:var(--danger)}
+.notif.warning{border-color:#b08030;color:#806020}
+.notif.success{border-color:#2a8040;color:#1a5030}
+.notif-close{background:none;border:none;color:var(--faint);font-size:14px;flex-shrink:0;padding:0;transition:color .15s}
+.notif-close:hover{color:var(--text)}
+
+/* Mobile */
+.ham-btn{display:none;position:fixed;top:12px;left:12px;z-index:1001;background:var(--bg1);color:var(--text);border:1px solid var(--border2);width:32px;height:32px;font-size:16px;align-items:center;justify-content:center}
+.sb-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.3);z-index:999}
+@media(max-width:768px){
+  .ham-btn{display:flex}
+  .sb-overlay{display:block}
+  .sidebar{position:fixed;left:0;top:0;height:100vh;z-index:1000;transform:translateX(-100%)}
+  .sidebar.open{transform:translateX(0)}
+  .msgs{padding:16px;padding-bottom:130px}
+  .input-wrap{padding:10px 16px 16px}
+}
+
+/* Spinner */
+.spin{width:16px;height:16px;border:1px solid var(--border2);border-top-color:var(--dim);border-radius:50%;animation:spin .8s linear infinite;flex-shrink:0}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes scaleIn{from{transform:scale(.97);opacity:0}to{transform:scale(1);opacity:1}}
+@keyframes slideUp{from{transform:translateY(8px);opacity:0}to{transform:translateY(0);opacity:1}}
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<!-- Dependencies (order matters) -->
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.6/marked.min.js"></script>
+
+<script type="text/babel">
+/* ═══════════════════════════════════════
+   ~^ LLM Council — single-file edition
+   Edit this file, refresh browser. Done.
+   ═══════════════════════════════════════ */
+const { useState, useEffect, useRef, useCallback, createContext, useContext } = React;
+
+// ── Panel colours (one per model slot) ────────────────────
+const PC = ['#d4621a','#1a7ad4','#9a30b0','#2a8030','#b09020','#c02060','#1a9090','#606060'];
+const MEDALS = ['🥇','🥈','🥉'];
+const OPENROUTER = 'https://openrouter.ai/api/v1/chat/completions';
+const SHORT = m => m.split('/').pop() || m;
+
+// ── Storage service (localStorage) ───────────────────────
+const LS_PRE = 'llm_council_conv_', LS_LIST = 'llm_council_conversations_list';
+function uuid() {
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) return crypto.randomUUID();
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+    const r = Math.random() * 16 | 0; return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+  });
+}
+const storage = {
+  list() { const j = localStorage.getItem(LS_LIST); return j ? JSON.parse(j) : []; },
+  saveList(l) { localStorage.setItem(LS_LIST, JSON.stringify(l)); },
+  create() {
+    const id = uuid(), now = new Date().toISOString();
+    const conv = { id, created_at: now, title: 'New Conversation', messages: [] };
+    this.save(conv);
+    const list = this.list(); list.unshift({ id, created_at: now, title: 'New Conversation', message_count: 0 });
+    this.saveList(list);
+    return conv;
+  },
+  get(id) { const j = localStorage.getItem(`${LS_PRE}${id}`); return j ? JSON.parse(j) : null; },
+  save(conv) {
+    localStorage.setItem(`${LS_PRE}${conv.id}`, JSON.stringify(conv));
+    const list = this.list(), idx = list.findIndex(c => c.id === conv.id);
+    if (idx !== -1) { list[idx] = { ...list[idx], title: conv.title, message_count: conv.messages.length }; this.saveList(list); }
+  },
+  delete(id) {
+    localStorage.removeItem(`${LS_PRE}${id}`);
+    this.saveList(this.list().filter(c => c.id !== id));
+  },
+  updateTitle(id, title) {
+    const conv = this.get(id); if (conv) { conv.title = title; this.save(conv); }
+  },
+};
+
+// ── Document service (PDF/image extraction) ───────────────
+const PDFJS_CDN = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+const PDFJS_WRK = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+let _pdfLib = null;
+async function loadPdfJs() {
+  if (_pdfLib) return _pdfLib;
+  if (window.pdfjsLib) { _pdfLib = window.pdfjsLib; _pdfLib.GlobalWorkerOptions.workerSrc = PDFJS_WRK; return _pdfLib; }
+  return new Promise((res, rej) => {
+    const s = document.createElement('script'); s.src = PDFJS_CDN;
+    s.onload = () => { window.pdfjsLib.GlobalWorkerOptions.workerSrc = PDFJS_WRK; _pdfLib = window.pdfjsLib; res(_pdfLib); };
+    s.onerror = rej; document.head.appendChild(s);
+  });
+}
+function fileToDataURL(f) {
+  return new Promise((res, rej) => { const r = new FileReader(); r.onload = e => res(e.target.result); r.onerror = rej; r.readAsDataURL(f); });
+}
+function fileToText(f) {
+  return new Promise((res, rej) => { const r = new FileReader(); r.onload = e => res(e.target.result); r.onerror = rej; r.readAsText(f); });
+}
+async function extractPdf(f) {
+  const pdfjs = await loadPdfJs();
+  const buf = await f.arrayBuffer();
+  const pdf = await pdfjs.getDocument({ data: buf }).promise;
+  const parts = [];
+  for (let i = 1; i <= pdf.numPages; i++) {
+    const page = await pdf.getPage(i), tc = await page.getTextContent();
+    parts.push(`[Page ${i}]\n${tc.items.map(x => x.str).join(' ')}`);
+  }
+  return parts.join('\n\n');
+}
+async function processFile(f) {
+  const { type: mt, name, size } = f;
+  if (mt.startsWith('image/')) return { name, type: 'image', content: await fileToDataURL(f), mimeType: mt, size };
+  if (mt === 'application/pdf') {
+    try { return { name, type: 'text', content: await extractPdf(f), mimeType: mt, size }; }
+    catch(e) { return { name, type: 'text', content: `[PDF extraction failed for "${name}"]`, mimeType: mt, size }; }
+  }
+  if (mt.startsWith('text/') || mt === 'application/json') return { name, type: 'text', content: await fileToText(f), mimeType: mt, size };
+  return { name, type: 'text', content: `[Unsupported type "${mt}" for "${name}"]`, mimeType: mt, size };
+}
+async function processFiles(files) { return Promise.all(Array.from(files).map(processFile)); }
+function buildMessages(query, attachments = [], history = []) {
+  const textAtts = attachments.filter(a => a.type === 'text');
+  const imgAtts  = attachments.filter(a => a.type === 'image');
+  let prefix = '';
+  if (textAtts.length) prefix = textAtts.map(a => `[Attached: ${a.name}]\n${a.content}`).join('\n\n---\n\n') + '\n\n---\n\n';
+  const fullText = prefix + query;
+  const userContent = imgAtts.length
+    ? [{ type: 'text', text: fullText }, ...imgAtts.map(a => ({ type: 'image_url', image_url: { url: a.content } }))]
+    : fullText;
+  return [...history, { role: 'user', content: userContent }];
+}
+
+// ── Cost tracking ──────────────────────────────────────────
+// Persistent across page reloads, stored in localStorage
+const LS_COST = 'llm_council_session_cost';
+function loadCostData() {
+  try { const j = localStorage.getItem(LS_COST); return j ? JSON.parse(j) : { promptTokens: 0, completionTokens: 0, calls: 0, sessionStart: Date.now() }; }
+  catch { return { promptTokens: 0, completionTokens: 0, calls: 0, sessionStart: Date.now() }; }
+}
+function saveCostData(d) { localStorage.setItem(LS_COST, JSON.stringify(d)); }
+// Estimate: $0.50/1M prompt, $1.50/1M completion (conservative average for cheap models; free models cost $0)
+function estimateCost(promptTok, completionTok) {
+  return (promptTok / 1_000_000) * 0.50 + (completionTok / 1_000_000) * 1.50;
+}
+function formatCost(n) {
+  if (n < 0.001) return n === 0 ? '$0.00' : '< $0.001';
+  if (n < 0.01) return `$${n.toFixed(4)}`;
+  return `$${n.toFixed(3)}`;
+}
+function formatTokens(n) {
+  if (n >= 1_000_000) return `${(n/1_000_000).toFixed(1)}M`;
+  if (n >= 1_000) return `${(n/1_000).toFixed(1)}k`;
+  return String(n);
+}
+
+// ── Council service (OpenRouter / Local AI) ───────────────
+class Council {
+  constructor(apiKey, models, chairman, localAiUrl = '') {
+    this.apiKey = apiKey;
+    this.models = models;
+    this.chairman = chairman;
+    this.localAiUrl = localAiUrl.replace(/\/$/, '');
+  }
+
+  endpoint() {
+    if (this.localAiUrl) return `${this.localAiUrl}/chat/completions`;
+    return OPENROUTER;
+  }
+
+  headers() {
+    const h = { 'Content-Type': 'application/json' };
+    if (this.apiKey) h['Authorization'] = `Bearer ${this.apiKey}`;
+    if (!this.localAiUrl) {
+      h['HTTP-Referer'] = location.origin;
+      h['X-Title'] = 'LLM Council';
+    }
+    return h;
+  }
+
+  async query(model, messages, onEvent, timeout = 60000, retries = 3, signal = null) {
+    let last;
+    for (let i = 0; i < retries; i++) {
+      if (signal?.aborted) return null;
+      try {
+        const innerCtrl = new AbortController();
+        const tid = setTimeout(() => innerCtrl.abort(), timeout);
+        // Combine outer signal with per-request timeout
+        if (signal) signal.addEventListener('abort', () => innerCtrl.abort(), { once: true });
+
+        const resp = await fetch(this.endpoint(), {
+          method: 'POST',
+          headers: this.headers(),
+          body: JSON.stringify({ model, messages }),
+          signal: innerCtrl.signal,
+        });
+        clearTimeout(tid);
+
+        if (resp.status === 429) {
+          const wait = Math.pow(2, i + 1) * 1000;
+          if (onEvent) onEvent('warning', { message: `Rate limit on ${model}, retrying in ${wait/1000}s…` });
+          await new Promise(r => setTimeout(r, wait)); continue;
+        }
+        if (!resp.ok) { const m = `Error querying ${model}: ${resp.statusText}`; if (onEvent) onEvent('warning', { message: m }); return null; }
+        const data = await resp.json();
+        if (data.error) { const m = `API error for ${model}: ${data.error.message}`; if (onEvent) onEvent('warning', { message: m }); return null; }
+        // Track usage / cost
+        if (data.usage && onEvent) onEvent('usage', { model, usage: data.usage });
+        return data.choices[0].message;
+      } catch(e) {
+        if (signal?.aborted || e.name === 'AbortError') return null;
+        last = e;
+        if (onEvent) onEvent('warning', { message: `Connection error for ${model}, retrying…` });
+        await new Promise(r => setTimeout(r, 1000));
+      }
+    }
+    if (onEvent) onEvent('error', { message: `Failed to query ${model} after ${retries} retries.` });
+    return null;
+  }
+
+  async queryAll(models, messages, onEvent, signal) {
+    const results = await Promise.all(models.map(async m => ({ model: m, response: await this.query(m, messages, onEvent, 60000, 3, signal) })));
+    return Object.fromEntries(results.map(({ model, response }) => [model, response]));
+  }
+
+  buildHistory(msgs) {
+    return msgs.flatMap(m => {
+      if (m.role === 'user') return [{ role: 'user', content: m.content || '' }];
+      if (m.role === 'assistant' && m.stage3) return [{ role: 'assistant', content: m.stage3.response || '' }];
+      return [];
+    });
+  }
+
+  async stage1(query, atts, history, onEvent, signal) {
+    const msgs = buildMessages(query, atts, history);
+    const responses = await this.queryAll(this.models, msgs, onEvent, signal);
+    return Object.entries(responses).filter(([, r]) => r).map(([model, r]) => ({ model, response: r.content }));
+  }
+
+  async stage2(query, s1, onEvent, signal) {
+    const labels = s1.map((_, i) => String.fromCharCode(65 + i));
+    const labelToModel = Object.fromEntries(s1.map((r, i) => [`Response ${labels[i]}`, r.model]));
+    const responsesText = s1.map((r, i) => `Response ${labels[i]}:\n${r.response}`).join('\n\n');
+    const prompt = `You are evaluating responses to: ${query}\n\nResponses (anonymized):\n\n${responsesText}\n\n1. Evaluate each response individually.\n2. End with EXACTLY this format:\n\nFINAL RANKING:\n1. Response X\n2. Response Y\n...`;
+    const msgs = [{ role: 'user', content: prompt }];
+    const responses = await this.queryAll(this.models, msgs, onEvent, signal);
+    const s2 = Object.entries(responses).filter(([, r]) => r).map(([model, r]) => ({
+      model, ranking: r.content, parsed_ranking: this.parseRanking(r.content)
+    }));
+    return { s2, labelToModel };
+  }
+
+  parseRanking(text) {
+    const section = text.includes('FINAL RANKING:') ? text.split('FINAL RANKING:')[1] : text;
+    return section.match(/Response [A-Z]/g) || [];
+  }
+
+  calcAggregate(s2, labelToModel) {
+    const positions = {};
+    s2.forEach(r => r.parsed_ranking.forEach((label, i) => {
+      const m = labelToModel[label]; if (!m) return;
+      if (!positions[m]) positions[m] = [];
+      positions[m].push(i + 1);
+    }));
+    return Object.entries(positions).map(([model, pos]) => ({
+      model, average_rank: parseFloat((pos.reduce((a,b) => a+b, 0) / pos.length).toFixed(2)), rankings_count: pos.length
+    })).sort((a, b) => a.average_rank - b.average_rank);
+  }
+
+  async stage3(query, s1, s2, history, onEvent, signal) {
+    const s1t = s1.map(r => `Model: ${r.model}\nResponse: ${r.response}`).join('\n\n');
+    const s2t = s2.map(r => `Model: ${r.model}\nRanking: ${r.ranking}`).join('\n\n');
+    const prompt = `You are Chairman of an LLM Council. Synthesize the best answer to: ${query}\n\nStage 1:\n${s1t}\n\nStage 2 Rankings:\n${s2t}\n\nProvide a clear, comprehensive final answer:`;
+    const msgs = [...history, { role: 'user', content: prompt }];
+    const resp = await this.query(this.chairman, msgs, onEvent, 60000, 3, signal);
+    return resp ? { model: this.chairman, response: resp.content } : { model: this.chairman, response: 'Error: chairman failed to respond.' };
+  }
+
+  async generateTitle(query) {
+    const resp = await this.query('z-ai/glm-4.5-air:free', [{ role: 'user', content: `Title for this question in 3-5 words, no punctuation:\n${query}\n\nTitle:` }], null, 30000, 1);
+    if (!resp) return 'New Conversation';
+    return resp.content.trim().replace(/['"]/g, '').substring(0, 50);
+  }
+
+  async querySingle(model, query, atts, history, onEvent, signal) {
+    const msgs = buildMessages(query, atts, history);
+    const resp = await this.query(model, msgs, onEvent, 60000, 3, signal);
+    return resp ? resp.content : null;
+  }
+
+  async run(query, onEvent, atts = [], prevMsgs = [], signal = null) {
+    const history = this.buildHistory(prevMsgs);
+    onEvent('stage1_start');
+    const s1 = await this.stage1(query, atts, history, onEvent, signal);
+    if (signal?.aborted) { onEvent('aborted'); return; }
+    if (!s1.length) { onEvent('error', { message: 'All models failed to respond.' }); return; }
+    onEvent('stage1_complete', s1);
+    onEvent('stage2_start');
+    const { s2, labelToModel } = await this.stage2(query, s1, onEvent, signal);
+    if (signal?.aborted) { onEvent('aborted'); return; }
+    const aggregate_rankings = this.calcAggregate(s2, labelToModel);
+    onEvent('stage2_complete', { data: s2, metadata: { label_to_model: labelToModel, aggregate_rankings } });
+    onEvent('stage3_start');
+    const s3 = await this.stage3(query, s1, s2, history, onEvent, signal);
+    if (signal?.aborted) { onEvent('aborted'); return; }
+    onEvent('stage3_complete', s3);
+    if (!prevMsgs.length) this.generateTitle(query).then(t => onEvent('title_complete', t));
+    onEvent('complete');
+  }
+}
+
+// ── Settings context ───────────────────────────────────────
+const SettingsCtx = createContext();
+const DEFAULT_MODELS = [
+  'tngtech/deepseek-r1t2-chimera:free',
+  'kwaipilot/kat-coder-pro:free',
+  'nvidia/nemotron-nano-12b-v2-vl:free',
+  'z-ai/glm-4.5-air:free',
+];
+const DEFAULT_CHAIRMAN = 'amazon/nova-2-lite-v1:free';
+function SettingsProvider({ children }) {
+  const [apiKey, setApiKey] = useState(() => localStorage.getItem('openRouterApiKey') || '');
+  const [models, setModels] = useState(() => { const s = localStorage.getItem('councilModels'); return s ? JSON.parse(s) : DEFAULT_MODELS; });
+  const [chairman, setChairman] = useState(() => localStorage.getItem('chairmanModel') || DEFAULT_CHAIRMAN);
+  const [localAiUrl, setLocalAiUrl] = useState(() => localStorage.getItem('localAiUrl') || '');
+
+  useEffect(() => { apiKey ? localStorage.setItem('openRouterApiKey', apiKey) : localStorage.removeItem('openRouterApiKey'); }, [apiKey]);
+  useEffect(() => { localStorage.setItem('councilModels', JSON.stringify(models)); }, [models]);
+  useEffect(() => { localStorage.setItem('chairmanModel', chairman); }, [chairman]);
+  useEffect(() => { localAiUrl ? localStorage.setItem('localAiUrl', localAiUrl) : localStorage.removeItem('localAiUrl'); }, [localAiUrl]);
+
+  return <SettingsCtx.Provider value={{ apiKey, setApiKey, models, setModels, chairman, setChairman, localAiUrl, setLocalAiUrl, isConfigured: !!(apiKey || localAiUrl) }}>{children}</SettingsCtx.Provider>;
+}
+function useSettings() { return useContext(SettingsCtx); }
+
+// ── Markdown component ─────────────────────────────────────
+function Md({ children, className }) {
+  if (!children) return null;
+  const html = typeof marked !== 'undefined' ? marked.parse(String(children)) : String(children).replace(/\n/g, '<br>');
+  return <div className={className || ''} dangerouslySetInnerHTML={{ __html: html }} />;
+}
+
+// ── Notification ───────────────────────────────────────────
+function Notification({ message, type, onClose }) {
+  useEffect(() => { const t = setTimeout(onClose, 6000); return () => clearTimeout(t); }, []);
+  return (
+    <div className={`notif ${type || ''}`}>
+      <span style={{ flex: 1 }}>{message}</span>
+      <button className="notif-close" onClick={onClose}>×</button>
+    </div>
+  );
+}
+
+// ── Stage 1: Arena Grid ────────────────────────────────────
+function ModelPanel({ resp, colorIdx, onRedo, onChangeModel }) {
+  const color = PC[colorIdx % PC.length];
+  const [editing, setEditing] = useState(false);
+  const [editVal, setEditVal] = useState(resp.model);
+  const inputRef = useRef();
+  useEffect(() => { if (editing && inputRef.current) inputRef.current.focus(); }, [editing]);
+  const startEdit = () => { setEditVal(resp.model); setEditing(true); };
+  const confirmEdit = () => {
+    const t = editVal.trim();
+    if (t && t !== resp.model) onChangeModel && onChangeModel(t);
+    setEditing(false);
+  };
+  const cancelEdit = () => setEditing(false);
+  return (
+    <div className="panel" style={{ '--pc': color }}>
+      <div className="panel-head">
+        {editing ? (
+          <div className="panel-edit-row">
+            <input ref={inputRef} className="panel-edit-inp" value={editVal} onChange={e => setEditVal(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter') confirmEdit(); if (e.key === 'Escape') cancelEdit(); }}
+              onBlur={confirmEdit} />
+            <button className="panel-edit-ok" onClick={confirmEdit}>✓</button>
+            <button className="panel-edit-x" onClick={cancelEdit}>✕</button>
+          </div>
+        ) : (
+          <>
+            <button className="panel-name" style={{ color }} onClick={startEdit}>
+              {SHORT(resp.model)}<span className="edit-hint">✎</span>
+            </button>
+            <button className="panel-redo" onClick={() => onRedo && onRedo()} disabled={resp.loading} title="Re-run">↻</button>
+          </>
+        )}
+      </div>
+      <div className="panel-model-id">{resp.model}</div>
+      <div className="panel-body">
+        {resp.loading ? (
+          <div className="panel-loading">
+            <div className="panel-spin"></div>
+            <span style={{ color, fontSize: 11 }}>querying…</span>
+          </div>
+        ) : resp.response ? (
+          <Md className="panel-md">{resp.response}</Md>
+        ) : (
+          <span className="panel-empty">no response</span>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function Stage1({ responses, onRedo, onChangeModel }) {
+  if (!responses || !responses.length) return null;
+  return (
+    <div>
+      <div className="arena-hdr">
+        <span className="arena-lbl">STAGE 1</span>
+        <span className="arena-sub">─ Individual Responses</span>
+        <span className="arena-cnt">{responses.length} agents</span>
+      </div>
+      <div className="arena-grid">
+        {responses.map((r, i) => (
+          <ModelPanel key={`${r.model}-${i}`} resp={r} colorIdx={i}
+            onRedo={() => onRedo && onRedo(i, r.model)}
+            onChangeModel={nid => onChangeModel && onChangeModel(i, r.model, nid)} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ── Stage 2: Leaderboard ───────────────────────────────────
+function Stage2({ rankings, labelToModel, aggregateRankings }) {
+  const [open, setOpen] = useState(null);
+  if (!rankings || !rankings.length) return null;
+  const deAnon = text => {
+    if (!labelToModel) return text;
+    return Object.entries(labelToModel).reduce((t, [lbl, m]) => t.replace(new RegExp(lbl, 'g'), `**${SHORT(m)}**`), text);
+  };
+  return (
+    <div>
+      <div className="arena-hdr">
+        <span className="arena-lbl" style={{ background: '#f0faf4', color: '#1a6040', borderColor: '#b0d8c0' }}>STAGE 2</span>
+        <span className="arena-sub">─ Peer Rankings</span>
+        <span className="arena-cnt">{rankings.length} evaluators</span>
+      </div>
+      {aggregateRankings && aggregateRankings.length > 0 && (
+        <div className="leaderboard">
+          <div className="lb-title">▲ LEADERBOARD</div>
+          {aggregateRankings.map((a, i) => {
+            const cIdx = aggregateRankings.indexOf(a);
+            const color = PC[cIdx % PC.length];
+            const w = Math.max(8, 100 - (a.average_rank - 1) * 22);
+            return (
+              <div key={a.model} className="lb-row">
+                <span className="lb-rank">{i < 3 ? MEDALS[i] : `#${i+1}`}</span>
+                <span className="lb-model" style={{ color }}>{SHORT(a.model)}</span>
+                <div className="lb-bar"><div className="lb-fill" style={{ width: `${w}%`, background: color }} /></div>
+                <span className="lb-score" style={{ color }}>{a.average_rank.toFixed(2)}</span>
+                <span className="lb-votes">{a.rankings_count}v</span>
+              </div>
+            );
+          })}
+        </div>
+      )}
+      <div className="evals-hdr">RAW EVALUATIONS <span className="eval-hint">click to expand</span></div>
+      <div className="eval-list">
+        {rankings.map((r, i) => {
+          const color = PC[i % PC.length];
+          const isOpen = open === i;
+          return (
+            <div key={i} className={`eval-card${isOpen ? ' open' : ''}`} style={{ '--ec': color }}>
+              <button className="eval-head" onClick={() => setOpen(isOpen ? null : i)}>
+                <span className="eval-model" style={{ color }}>{SHORT(r.model)}</span>
+                <span className="eval-mini">
+                  {r.parsed_ranking.map((lbl, j) => (
+                    <span key={j} className="eval-badge" style={{ opacity: 1 - j * 0.2 }}>
+                      {labelToModel && labelToModel[lbl] ? SHORT(labelToModel[lbl]) : lbl}
+                    </span>
+                  ))}
+                </span>
+                <span className="eval-chev">{isOpen ? '▲' : '▼'}</span>
+              </button>
+              {isOpen && (
+                <div className="eval-body">
+                  <Md className="eval-text">{deAnon(r.ranking)}</Md>
+                  {r.parsed_ranking.length > 0 && (
+                    <div className="eval-parsed">
+                      <span className="eval-parsed-lbl">Extracted:</span>
+                      {r.parsed_ranking.map((lbl, j) => {
+                        const m = labelToModel && labelToModel[lbl] ? SHORT(labelToModel[lbl]) : lbl;
+                        const cj = aggregateRankings ? aggregateRankings.findIndex(a => a.model === (labelToModel && labelToModel[lbl])) : j;
+                        return <span key={j} className="eval-parsed-item" style={{ color: PC[cj >= 0 ? cj : j] }}>{j+1}. {m}</span>;
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ── Stage 3: Verdict ───────────────────────────────────────
+function Stage3({ finalResponse }) {
+  if (!finalResponse) return null;
+  return (
+    <div>
+      <div className="arena-hdr">
+        <span className="arena-lbl" style={{ background: '#f0faf6', color: '#1a6040', borderColor: '#a0d8c0' }}>STAGE 3</span>
+        <span className="arena-sub">─ Council Verdict</span>
+        <span className="arena-cnt" style={{ color: '#2aa880' }}>⚖ {SHORT(finalResponse.model)}</span>
+      </div>
+      <div className="verdict">
+        <div className="verdict-head">
+          <span className="verdict-title">FINAL ANSWER</span>
+          <span className="verdict-model">{finalResponse.model}</span>
+        </div>
+        <div className="verdict-body"><Md>{finalResponse.response}</Md></div>
+      </div>
+    </div>
+  );
+}
+
+// ── Settings Modal ─────────────────────────────────────────
+function SettingsModal({ onClose }) {
+  const { apiKey, setApiKey, models, setModels, chairman, setChairman, localAiUrl, setLocalAiUrl } = useSettings();
+  const [lKey, setLKey] = useState(apiKey);
+  const [lModels, setLModels] = useState(models.join('\n'));
+  const [lChairman, setLChairman] = useState(chairman);
+  const [lLocalUrl, setLLocalUrl] = useState(localAiUrl);
+  const [localOn, setLocalOn] = useState(!!localAiUrl);
+  const [testResults, setTestResults] = useState({});  // model -> 'pending'|'ok'|'error'|'timeout'
+  const [testing, setTesting] = useState(false);
+
+  const runModelTest = async () => {
+    const key = lKey.trim();
+    const endpoint = localOn && lLocalUrl.trim()
+      ? `${lLocalUrl.trim().replace(/\/$/,'')}/chat/completions`
+      : OPENROUTER;
+    const allModels = [...new Set([
+      ...lModels.split('\n').map(m => m.trim()).filter(Boolean),
+      lChairman.trim(),
+    ])];
+    if (!allModels.length) return;
+    setTesting(true);
+    const init = Object.fromEntries(allModels.map(m => [m, 'pending']));
+    setTestResults(init);
+    await Promise.all(allModels.map(async model => {
+      const ctrl = new AbortController();
+      const tid = setTimeout(() => ctrl.abort(), 12000);
+      try {
+        const headers = { 'Content-Type': 'application/json' };
+        if (key) headers['Authorization'] = `Bearer ${key}`;
+        if (!localOn) { headers['HTTP-Referer'] = location.origin; headers['X-Title'] = 'LLM Council'; }
+        const resp = await fetch(endpoint, {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({ model, messages: [{ role: 'user', content: 'Reply with only the single word: OK' }], max_tokens: 10 }),
+          signal: ctrl.signal,
+        });
+        clearTimeout(tid);
+        if (!resp.ok) { setTestResults(p => ({ ...p, [model]: 'error' })); return; }
+        const data = await resp.json();
+        if (data.error || !data.choices?.[0]) { setTestResults(p => ({ ...p, [model]: 'error' })); return; }
+        setTestResults(p => ({ ...p, [model]: 'ok' }));
+      } catch(e) {
+        clearTimeout(tid);
+        setTestResults(p => ({ ...p, [model]: e.name === 'AbortError' ? 'timeout' : 'error' }));
+      }
+    }));
+    setTesting(false);
+  };
+
+  const save = () => {
+    const newModels = lModels.split('\n').map(m => m.trim()).filter(Boolean);
+    const newLocalUrl = localOn ? lLocalUrl.trim() : '';
+    setApiKey(lKey); setModels(newModels); setChairman(lChairman); setLocalAiUrl(newLocalUrl);
+    onClose();
+  };
+  return (
+    <div className="overlay" onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="modal">
+        <div className="modal-title">~^ settings</div>
+
+        <div className="modal-section">
+          <div className="modal-section-title">OpenRouter</div>
+          <div className="form-group">
+            <label>API Key</label>
+            <input className="form-input" type="password" value={lKey} onChange={e => setLKey(e.target.value)} placeholder="sk-or-…" />
+            <div className="help-text">stored locally in your browser. get one at <a href="https://openrouter.ai/keys" target="_blank" className="help-link">openrouter.ai/keys →</a></div>
+          </div>
+          <div className="form-group">
+            <label>Council Models (one per line)</label>
+            <textarea className="form-textarea" value={lModels} onChange={e => setLModels(e.target.value)} />
+          </div>
+          <div className="form-group">
+            <label>Chairman Model</label>
+            <input className="form-input" type="text" value={lChairman} onChange={e => setLChairman(e.target.value)} />
+          </div>
+          <div style={{borderTop:'1px solid var(--border)',paddingTop:12,marginTop:4}}>
+            <div style={{display:'flex',alignItems:'center',gap:10,marginBottom: Object.keys(testResults).length ? 10 : 0}}>
+              <button type="button" onClick={runModelTest} disabled={testing || !lKey.trim()}
+                style={{background:'transparent',border:'1px solid var(--border2)',color:'var(--dim)',padding:'5px 12px',fontSize:11,fontFamily:'var(--mono)',cursor:'pointer',transition:'all .15s',opacity: (!lKey.trim()) ? .4 : 1}}
+                onMouseOver={e=>{if(!testing&&lKey.trim())e.target.style.borderColor='var(--dim)'}}
+                onMouseOut={e=>e.target.style.borderColor='var(--border2)'}>
+                {testing ? '⏳ testing…' : '⚡ test all models'}
+              </button>
+              {Object.keys(testResults).length > 0 && !testing && (
+                <span style={{fontSize:10,color:'var(--faint)'}}>
+                  {Object.values(testResults).filter(v=>v==='ok').length}/{Object.keys(testResults).length} responded
+                </span>
+              )}
+            </div>
+            {Object.keys(testResults).length > 0 && (
+              <div style={{display:'flex',flexDirection:'column',gap:3}}>
+                {Object.entries(testResults).map(([model, status]) => (
+                  <div key={model} style={{display:'flex',alignItems:'center',gap:8,fontSize:11,fontFamily:'var(--mono)'}}>
+                    {status === 'pending' && <div className="spin" style={{width:10,height:10,flexShrink:0}}/>}
+                    {status === 'ok'      && <span style={{color:'#2a8040',flexShrink:0}}>✓</span>}
+                    {status === 'error'   && <span style={{color:'var(--danger)',flexShrink:0}}>✗</span>}
+                    {status === 'timeout' && <span style={{color:'#b08030',flexShrink:0}}>⏱</span>}
+                    <span style={{
+                      color: status==='ok' ? '#2a8040' : status==='timeout' ? '#b08030' : status==='error' ? 'var(--danger)' : 'var(--dim)',
+                      overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',flex:1
+                    }}>{model}</span>
+                    <span style={{color:'var(--faint)',fontSize:10,flexShrink:0}}>
+                      {status==='ok'?'responded':status==='timeout'?'timed out (12s)':status==='error'?'error':'…'}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="modal-section">
+          <div className="modal-section-title" style={{justifyContent:'space-between'}}>
+            <span>Local AI</span>
+            <label className="toggle-wrap" onClick={() => setLocalOn(v => !v)}>
+              <div className={`toggle-track${localOn ? ' on' : ''}`}><div className="toggle-thumb"/></div>
+              <span className={`toggle-label${localOn ? ' on' : ''}`}>{localOn ? 'enabled' : 'disabled'}</span>
+            </label>
+          </div>
+          <div className={`section-fields${localOn ? '' : ' hidden'}`}>
+            <div className="help-text" style={{ marginBottom: 12 }}>connect to Ollama, LM Studio, or any OpenAI-compatible local server. overrides OpenRouter when set.</div>
+            <div className="form-group">
+              <label>Base URL</label>
+              <input className="form-input" type="text" value={lLocalUrl} onChange={e => setLLocalUrl(e.target.value)} placeholder="http://localhost:11434/v1" />
+              <div className="help-text">
+                Ollama: <code style={{background:'var(--bg2)',padding:'0 4px',fontSize:11}}>http://localhost:11434/v1</code> &nbsp;
+                LM Studio: <code style={{background:'var(--bg2)',padding:'0 4px',fontSize:11}}>http://localhost:1234/v1</code>
+              </div>
+            </div>
+            <div className="help-text" style={{ color: 'var(--faint)' }}>
+              set model names in council models above to match your local models (e.g. <code style={{fontSize:11}}>llama3.2</code>, <code style={{fontSize:11}}>mistral</code>).
+            </div>
+          </div>
+        </div>
+
+        <div className="modal-actions">
+          <button className="btn-cancel" onClick={onClose}>cancel</button>
+          <button className="btn-save" onClick={save}>save →</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Intro Modal ────────────────────────────────────────────
+function IntroModal({ onClose }) {
+  return (
+    <div className="overlay">
+      <div className="modal">
+        <div className="intro-content">
+          <div className="intro-symbol">~^</div>
+          <div className="intro-title">LLM Council</div>
+          <div className="intro-desc">multiple AI models deliberate, peer-review each other, and synthesise a final answer.</div>
+          <div className="intro-steps">
+            {[
+              ['Stage 1', 'all council models answer your question in parallel.'],
+              ['Stage 2', 'models evaluate each other anonymously and rank the responses.'],
+              ['Stage 3', 'the chairman synthesises everything into a final verdict.'],
+            ].map(([n, t], i) => (
+              <div key={i} className="intro-step">
+                <span className="intro-step-n">{i+1}.</span>
+                <div className="intro-step-txt"><strong>{n}</strong>{t}</div>
+              </div>
+            ))}
+          </div>
+          <button className="intro-btn" onClick={onClose}>configure api key →</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Chat Interface ─────────────────────────────────────────
+const ACCEPT = 'image/*,application/pdf,text/plain,text/markdown,text/csv,application/json';
+
+function ChatInterface({ conversation, onSend, isLoading, onStop, onRedo, onChangeModel, convUsage }) {
+  const [input, setInput] = useState('');
+  const [atts, setAtts] = useState([]);
+  const [rawFiles, setRawFiles] = useState([]);
+  const [processingFiles, setProcessingFiles] = useState(false);
+  const [dragging, setDragging] = useState(false);
+  const endRef = useRef(), fileRef = useRef();
+
+  useEffect(() => { endRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [conversation]);
+
+  const addFiles = async (files) => {
+    if (!files || !files.length) return;
+    const valid = Array.from(files).filter(f => {
+      if (f.size > 20 * 1024 * 1024) { alert(`"${f.name}" exceeds 20MB.`); return false; } return true;
+    });
+    if (!valid.length) return;
+    setProcessingFiles(true);
+    try {
+      const processed = await processFiles(valid);
+      setAtts(p => [...p, ...processed]);
+      setRawFiles(p => [...p, ...valid]);
+    } finally { setProcessingFiles(false); }
+  };
+
+  const removeAtt = i => { setAtts(p => p.filter((_, j) => j !== i)); setRawFiles(p => p.filter((_, j) => j !== i)); };
+
+  const submit = e => {
+    e.preventDefault();
+    if ((input.trim() || atts.length) && !isLoading && !processingFiles) {
+      onSend(input, atts, rawFiles);
+      setInput(''); setAtts([]); setRawFiles([]);
+      if (fileRef.current) fileRef.current.value = '';
+    }
+  };
+
+  const keydown = e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submit(e); } };
+
+  const print = content => {
+    const w = window.open('', '_blank');
+    if (!w) { alert('Allow popups to print.'); return; }
+    const html = typeof marked !== 'undefined' ? marked.parse(content) : content.replace(/\n/g, '<br>');
+    w.document.write(`<!DOCTYPE html><html><head><title>Council Report</title><style>
+      body{font-family:Georgia,serif;max-width:760px;margin:40px auto;color:#111;line-height:1.7;font-size:14px}
+      h1,h2,h3,h4{font-family:monospace;margin:1.4em 0 .5em;font-size:1em;text-transform:uppercase;letter-spacing:.5px}
+      p{margin:0 0 .9em}
+      table{width:100%;border-collapse:collapse;font-size:13px;margin-bottom:1em}
+      th,td{border:1px solid #ccc;padding:6px 10px;text-align:left}
+      th{background:#f5f5f5;font-weight:700}
+      code{background:#f0f0f0;padding:1px 5px;font-family:monospace;font-size:.9em}
+      pre{background:#f0f0f0;padding:12px;overflow-x:auto;font-size:12px}
+      pre code{background:none;padding:0}
+      blockquote{border-left:3px solid #ccc;margin:0 0 1em;padding-left:14px;color:#555}
+      ul,ol{padding-left:24px;margin-bottom:1em}
+      li{margin-bottom:.3em}
+      hr{border:none;border-top:1px solid #ddd;margin:1.5em 0}
+      strong{font-weight:700}
+      @media print{body{margin:20px}}
+    </style></head><body>${html}<script>window.onload=()=>{window.print()}<\/script></body></html>`);
+    w.document.close();
+  };
+
+  if (!conversation) return (
+    <div className="chat-main">
+      <div className="msgs"><div className="empty-state"><div className="empty-logo">~^</div><div>select or create a conversation</div></div></div>
+    </div>
+  );
+
+  return (
+    <div className="chat-main" onDragOver={e => { e.preventDefault(); setDragging(true); }}
+      onDragLeave={() => setDragging(false)} onDrop={e => { e.preventDefault(); setDragging(false); addFiles(e.dataTransfer.files); }}>
+
+      {isLoading && (
+        <div className="proc-banner">
+          <div className="spin"></div>
+          <div><strong>council deliberating…</strong><span>do not close this page.</span></div>
+        </div>
+      )}
+
+      <div className="msgs">
+        {conversation.messages.length === 0 ? (
+          <div className="empty-state">
+            <div className="empty-logo">~^</div>
+            <div>ask your question below</div>
+            <div className="empty-hint">attach photos or PDFs for context</div>
+          </div>
+        ) : conversation.messages.map((msg, idx) => (
+          <div key={idx} className="msg-group">
+            {msg.role === 'user' ? (
+              <div className="user-msg">
+                <div className="msg-label">you</div>
+                <div className="msg-content">
+                  {msg.attachmentNames && msg.attachmentNames.length > 0 && (
+                    <div className="attach-row">
+                      {msg.attachmentNames.map((n, i) => <span key={i} className="attach-chip">📎 {n}</span>)}
+                    </div>
+                  )}
+                  <Md>{msg.content}</Md>
+                </div>
+              </div>
+            ) : (
+              <div className="assistant-msg">
+                <div className="msg-label">~^ council</div>
+                {msg.loading?.stage1 && <div className="stage-loading"><div className="spin"></div><span>stage 1: collecting responses…</span></div>}
+                {msg.stage1 && <Stage1 responses={msg.stage1}
+                  onRedo={(si, mn) => onRedo && onRedo(idx, si, mn)}
+                  onChangeModel={(si, om, nm) => onChangeModel && onChangeModel(idx, si, om, nm)} />}
+                {msg.loading?.stage2 && <div className="stage-loading"><div className="spin"></div><span>stage 2: peer rankings…</span></div>}
+                {msg.stage2 && <Stage2 rankings={msg.stage2} labelToModel={msg.metadata?.label_to_model} aggregateRankings={msg.metadata?.aggregate_rankings} />}
+                {msg.loading?.stage3 && <div className="stage-loading"><div className="spin"></div><span>stage 3: synthesising verdict…</span></div>}
+                {msg.stage3 && (
+                  <div className="stage3-wrap">
+                    <Stage3 finalResponse={msg.stage3} />
+                    <button className="print-btn" onClick={() => print(msg.stage3.response)}>print report →</button>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        ))}
+        <div ref={endRef} />
+      </div>
+
+      <form className="input-wrap" onSubmit={submit}>
+        {atts.length > 0 && (
+          <div className="attach-preview">
+            {atts.map((a, i) => (
+              <div key={i} className="ap-chip">
+                {a.type === 'image' ? <img src={a.content} alt={a.name} /> : <span>{a.mimeType === 'application/pdf' ? '📄' : '📝'}</span>}
+                <span className="ap-name" title={a.name}>{a.name.length > 22 ? a.name.slice(0,20)+'…' : a.name}</span>
+                <button type="button" className="ap-del" onClick={() => removeAtt(i)}>×</button>
+              </div>
+            ))}
+            {processingFiles && <div className="ap-chip"><div className="spin" style={{width:12,height:12}}></div><span style={{color:'var(--dim)',fontSize:11}}>processing…</span></div>}
+          </div>
+        )}
+        <div className="input-row">
+          <button type="button" className="attach-btn" onClick={() => fileRef.current?.click()} disabled={isLoading || processingFiles} title="attach file">📎</button>
+          <input ref={fileRef} type="file" accept={ACCEPT} multiple style={{ display:'none' }} onChange={e => addFiles(e.target.files)} />
+          <textarea className="msg-input" rows={3}
+            placeholder={conversation.messages.length === 0 ? '> ask the council…' : '> follow-up question… (full council re-run)'}
+            value={input} onChange={e => setInput(e.target.value)} onKeyDown={keydown}
+            disabled={isLoading || processingFiles} />
+          {isLoading ? (
+            <button type="button" className="stop-btn" onClick={onStop}>■ stop</button>
+          ) : (
+            <button type="submit" className="send-btn" disabled={(!input.trim() && !atts.length) || processingFiles}>
+              send →
+            </button>
+          )}
+        </div>
+        {convUsage && (convUsage.promptTokens + convUsage.completionTokens) > 0 && (
+          <div style={{display:'flex',gap:16,fontSize:10,color:'var(--faint)',padding:'5px 2px 0',fontFamily:'var(--mono)'}}>
+            <span>conversation: <strong style={{color:'var(--dim)'}}>{formatTokens(convUsage.promptTokens + convUsage.completionTokens)} tokens</strong></span>
+            <span style={{color:'var(--border2)'}}>│</span>
+            <span>{formatTokens(convUsage.promptTokens)} in · {formatTokens(convUsage.completionTokens)} out</span>
+            <span style={{color:'var(--border2)'}}>│</span>
+            <span>est. <strong style={{color:'var(--dim)'}}>{formatCost(estimateCost(convUsage.promptTokens, convUsage.completionTokens))}</strong></span>
+            <span style={{color:'var(--border2)'}}>│</span>
+            <span>{convUsage.calls} API call{convUsage.calls !== 1 ? 's' : ''}</span>
+          </div>
+        )}
+      </form>
+    </div>
+  );
+}
+
+// ── Export / Import Modal ──────────────────────────────────
+function ExportImportModal({ onClose, costData }) {
+  const { apiKey, models, chairman, localAiUrl } = useSettings();
+  const [inclConvs, setInclConvs] = useState(true);
+  const [inclSettings, setInclSettings] = useState(true);
+  const [inclCost, setInclCost] = useState(false);
+  const [importResult, setImportResult] = useState(null); // null | {ok, msg}
+  const importRef = useRef();
+
+  const doExport = () => {
+    const out = { version: 1, exported_at: new Date().toISOString() };
+    if (inclConvs) {
+      const list = storage.list();
+      out.conversations = list.map(meta => storage.get(meta.id)).filter(Boolean);
+    }
+    if (inclSettings) {
+      out.settings = { apiKey, models, chairman, localAiUrl };
+    }
+    if (inclCost) {
+      out.costStats = costData;
+    }
+    const blob = new Blob([JSON.stringify(out, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = `llm-council-backup-${new Date().toISOString().slice(0,10)}.json`;
+    a.click(); URL.revokeObjectURL(url);
+  };
+
+  const doImport = async (file) => {
+    if (!file) return;
+    try {
+      const text = await fileToText(file);
+      const data = JSON.parse(text);
+      if (!data.version) throw new Error('Not a valid council backup file.');
+      let msgs = [];
+
+      if (data.conversations && Array.isArray(data.conversations)) {
+        let imported = 0;
+        for (const conv of data.conversations) {
+          if (!conv.id || !conv.messages) continue;
+          localStorage.setItem(`${LS_PRE}${conv.id}`, JSON.stringify(conv));
+          imported++;
+        }
+        // Rebuild list from all LS keys
+        const allIds = Object.keys(localStorage).filter(k => k.startsWith(LS_PRE)).map(k => k.slice(LS_PRE.length));
+        const list = allIds.map(id => {
+          const c = storage.get(id);
+          return c ? { id: c.id, created_at: c.created_at, title: c.title || 'New Conversation', message_count: c.messages.length } : null;
+        }).filter(Boolean).sort((a,b) => b.created_at.localeCompare(a.created_at));
+        storage.saveList(list);
+        msgs.push(`${imported} conversation(s) imported`);
+      }
+
+      if (data.settings) {
+        const s = data.settings;
+        if (s.apiKey) localStorage.setItem('openRouterApiKey', s.apiKey);
+        if (s.models) localStorage.setItem('councilModels', JSON.stringify(s.models));
+        if (s.chairman) localStorage.setItem('chairmanModel', s.chairman);
+        if (s.localAiUrl !== undefined) { s.localAiUrl ? localStorage.setItem('localAiUrl', s.localAiUrl) : localStorage.removeItem('localAiUrl'); }
+        msgs.push('settings restored');
+      }
+
+      if (data.costStats) {
+        localStorage.setItem(LS_COST, JSON.stringify(data.costStats));
+        msgs.push('cost stats restored');
+      }
+
+      setImportResult({ ok: true, msg: `✓ Imported: ${msgs.join(', ')}. Reload to apply.` });
+    } catch(e) {
+      setImportResult({ ok: false, msg: `✗ Import failed: ${e.message}` });
+    }
+  };
+
+  return (
+    <div className="overlay" onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="modal">
+        <div className="modal-title">~^ export / import</div>
+
+        <div className="modal-section">
+          <div className="modal-section-title">Export</div>
+          <p style={{fontSize:12,color:'var(--dim)',marginBottom:12}}>Choose what to include in the backup file.</p>
+
+          <label className="export-check-row">
+            <input type="checkbox" checked={inclConvs} onChange={e => setInclConvs(e.target.checked)} />
+            <div>
+              <span className="export-check-label">Conversations</span>
+              <span className="export-check-desc">all messages, responses and council stage data</span>
+            </div>
+          </label>
+          <label className="export-check-row">
+            <input type="checkbox" checked={inclSettings} onChange={e => setInclSettings(e.target.checked)} />
+            <div>
+              <span className="export-check-label">Settings</span>
+              <span className="export-check-desc">API key, model list, chairman, local AI URL</span>
+            </div>
+          </label>
+          <label className="export-check-row">
+            <input type="checkbox" checked={inclCost} onChange={e => setInclCost(e.target.checked)} />
+            <div>
+              <span className="export-check-label">Cost Stats</span>
+              <span className="export-check-desc">session token counts and estimated spend</span>
+            </div>
+          </label>
+
+          {inclSettings && (
+            <div className="export-warn">⚠ Your API key will be included in the backup file. Keep it safe and don't share it publicly.</div>
+          )}
+
+          <button className="btn-save" onClick={doExport} disabled={!inclConvs && !inclSettings && !inclCost}
+            style={{marginTop:4}}>
+            download backup →
+          </button>
+        </div>
+
+        <div className="modal-section">
+          <div className="modal-section-title">Import</div>
+          <p style={{fontSize:12,color:'var(--dim)',marginBottom:12}}>Restore from a previously exported backup. Existing conversations are kept; imported ones are merged in.</p>
+          <input ref={importRef} type="file" accept=".json,application/json" style={{display:'none'}} onChange={e => doImport(e.target.files[0])} />
+          <div className="import-drop" onClick={() => importRef.current?.click()}>
+            click to select a backup .json file
+          </div>
+          {importResult && (
+            <div className={`import-result ${importResult.ok ? 'ok' : 'err'}`}>
+              {importResult.msg}
+              {importResult.ok && <button onClick={() => location.reload()}
+                style={{marginLeft:10,background:'none',border:'1px solid #80c890',color:'#2a8040',padding:'2px 8px',fontSize:11,fontFamily:'var(--mono)',cursor:'pointer'}}>reload now →</button>}
+            </div>
+          )}
+        </div>
+
+        <div className="modal-actions">
+          <button className="btn-cancel" onClick={onClose}>close</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Sidebar ────────────────────────────────────────────────
+function Sidebar({ convs, currentId, onSelect, onNew, onDelete, onSettings, onExport, isOpen, onClose, costData }) {
+  const totalTokens = (costData.promptTokens || 0) + (costData.completionTokens || 0);
+  const estCost = estimateCost(costData.promptTokens || 0, costData.completionTokens || 0);
+  return (
+    <>
+      {isOpen && <div className="sb-overlay" onClick={onClose} />}
+      <div className={`sidebar${isOpen ? ' open' : ''}`}>
+        <div className="sb-head">
+          <div className="sb-logo">~^<small>LLM Council</small></div>
+          <button className="sb-btn primary" onClick={onNew}>new conversation</button>
+          <button className="sb-btn" onClick={onSettings}>settings</button>
+          <button className="sb-btn" onClick={onExport}>export / import</button>
+        </div>
+        <div className="sb-list">
+          {convs.length === 0 ? <div className="sb-empty">no conversations yet.</div> : convs.map(c => (
+            <div key={c.id} className={`conv-item${c.id === currentId ? ' active' : ''}`} onClick={() => onSelect(c.id)}>
+              <div>
+                <div className="conv-title">{c.title || 'New Conversation'}</div>
+                <div className="conv-meta">{c.message_count} msg</div>
+              </div>
+              <button className="conv-del" onClick={e => { e.stopPropagation(); if (confirm('Delete?')) onDelete(c.id); }}>×</button>
+            </div>
+          ))}
+        </div>
+        <div className="sb-foot">
+          {totalTokens > 0 && (
+            <div className="sb-cost">
+              <span className="sb-cost-lbl">session usage</span>
+              <span className="sb-cost-val">{formatTokens(totalTokens)} tokens</span>
+              <span className="sb-cost-sub">
+                {formatTokens(costData.promptTokens||0)} in · {formatTokens(costData.completionTokens||0)} out
+              </span>
+              <span className="sb-cost-sub">est. cost: {formatCost(estCost)} <span title="rough estimate for non-free models; free models cost $0" style={{cursor:'help',opacity:.6}}>ⓘ</span></span>
+              <button onClick={() => { saveCostData({ promptTokens:0, completionTokens:0, calls:0, sessionStart:Date.now() }); location.reload(); }}
+                style={{background:'none',border:'none',color:'var(--faint)',fontSize:9,cursor:'pointer',textAlign:'left',padding:'2px 0',fontFamily:'var(--mono)',textDecoration:'underline'}}>reset counter</button>
+            </div>
+          )}
+          <a href="https://github.com/jonromero/llm-council-in-the-browser" target="_blank" rel="noopener" className="sb-foot-link">fork on github →</a>
+          <a href="https://lastmachine.com" target="_blank" rel="noopener" className="sb-foot-link">lastmachine.com →</a>
+        </div>
+      </div>
+    </>
+  );
+}
+
+// ── App ────────────────────────────────────────────────────
+function App() {
+  const { apiKey, models, chairman, localAiUrl, isConfigured } = useSettings();
+  const [convs, setConvs] = useState([]);
+  const [currentId, setCurrentId] = useState(null);
+  const [conversation, setConversation] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+  const [showExport, setShowExport] = useState(false);
+  const [showIntro, setShowIntro] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [notif, setNotif] = useState(null);
+  const [costData, setCostData] = useState(loadCostData);
+  const [convUsage, setConvUsage] = useState({});  // per-conversation token totals
+  const abortCtrlRef = useRef(null);
+
+  useEffect(() => {
+    const seen = localStorage.getItem('llm_council_intro_seen');
+    if (!seen) setShowIntro(true);
+    else if (!isConfigured) setShowSettings(true);
+  }, []);
+
+  useEffect(() => { loadConvs(); }, []);
+  useEffect(() => { if (currentId) setConversation(storage.get(currentId)); else setConversation(null); }, [currentId]);
+
+
+  const loadConvs = () => { setConvs(storage.list()); };
+  const notify = (msg, type = 'info') => setNotif({ message: msg, type });
+
+  const addUsage = (usage) => {
+    setCostData(prev => {
+      const next = {
+        ...prev,
+        promptTokens: (prev.promptTokens || 0) + (usage.prompt_tokens || 0),
+        completionTokens: (prev.completionTokens || 0) + (usage.completion_tokens || 0),
+        calls: (prev.calls || 0) + 1,
+      };
+      saveCostData(next);
+      return next;
+    });
+    setConvUsage(prev => {
+      const id = currentId; if (!id) return prev;
+      const cur = prev[id] || { promptTokens: 0, completionTokens: 0, calls: 0 };
+      return { ...prev, [id]: {
+        promptTokens: cur.promptTokens + (usage.prompt_tokens || 0),
+        completionTokens: cur.completionTokens + (usage.completion_tokens || 0),
+        calls: cur.calls + 1,
+      }};
+    });
+  };
+
+  const handleStop = () => {
+    if (abortCtrlRef.current) {
+      abortCtrlRef.current.abort();
+      abortCtrlRef.current = null;
+    }
+    setLoading(false);
+    // Finalize any in-progress assistant message
+    if (currentId) {
+      const conv = storage.get(currentId);
+      if (conv) {
+        const last = conv.messages[conv.messages.length - 1];
+        if (last && last.role === 'assistant' && last.loading) {
+          last.loading = { stage1: false, stage2: false, stage3: false };
+          if (!last.stage3) last.stage3 = last.stage1 ? null : null; // keep whatever completed
+          storage.save(conv); setConversation({ ...conv });
+        }
+      }
+    }
+    notify('Council stopped.', 'warning');
+  };
+
+  const handleSend = async (content, atts = [], rawFiles = []) => {
+    if (!currentId) return;
+    if (!isConfigured) { notify('configure your api key (or local AI url) in settings.', 'error'); return; }
+    setLoading(true);
+    const conv = storage.get(currentId);
+    conv.messages.push({ role: 'user', content: content || '', attachmentNames: atts.map(a => a.name) });
+    storage.save(conv); setConversation({ ...conv });
+
+    const assistantMsg = { role: 'assistant', stage1: null, stage2: null, stage3: null, metadata: null, loading: { stage1: false, stage2: false, stage3: false } };
+    conv.messages.push(assistantMsg); storage.save(conv); setConversation({ ...conv });
+    const prevMsgs = conv.messages.slice(0, conv.messages.length - 2);
+    const council = new Council(apiKey, models, chairman, localAiUrl);
+
+    const ctrl = new AbortController();
+    abortCtrlRef.current = ctrl;
+
+    await council.run(content, (evt, data) => {
+      const c = storage.get(currentId); if (!c) return;
+      const last = c.messages[c.messages.length - 1];
+      switch (evt) {
+        case 'stage1_start': last.loading.stage1 = true; break;
+        case 'stage1_complete': last.stage1 = data; last.loading.stage1 = false; break;
+        case 'stage2_start': last.loading.stage2 = true; break;
+        case 'stage2_complete': last.stage2 = data.data; last.metadata = data.metadata; last.loading.stage2 = false; break;
+        case 'stage3_start': last.loading.stage3 = true; break;
+        case 'stage3_complete': last.stage3 = data; last.loading.stage3 = false; break;
+        case 'title_complete': storage.updateTitle(currentId, data); loadConvs(); break;
+        case 'usage': addUsage(data.usage); break;
+        case 'warning': notify(data.message, 'warning'); break;
+        case 'error': last.error = data.message; notify(data.message, 'error'); setLoading(false); break;
+        case 'aborted': last.loading = { stage1: false, stage2: false, stage3: false }; setLoading(false); break;
+        case 'complete': setLoading(false); abortCtrlRef.current = null; break;
+      }
+      if (!['title_complete','warning','error','usage'].includes(evt)) storage.save(c);
+      setConversation({ ...c });
+    }, atts, prevMsgs, ctrl.signal);
+  };
+
+  const handleRedo = async (msgIdx, slotIdx, modelName) => {
+    if (!currentId || !isConfigured) return;
+    const conv = storage.get(currentId);
+    const userMsg = conv.messages.slice(0, msgIdx).reverse().find(m => m.role === 'user');
+    if (!userMsg || !conv.messages[msgIdx]?.stage1) return;
+    conv.messages[msgIdx].stage1[slotIdx] = { ...conv.messages[msgIdx].stage1[slotIdx], loading: true };
+    storage.save(conv); setConversation({ ...conv });
+    const council = new Council(apiKey, models, chairman, localAiUrl);
+    const history = council.buildHistory(conv.messages.slice(0, msgIdx - 1));
+    const content = await council.querySingle(modelName, userMsg.content, [], history, (e, d) => {
+      if (e === 'warning') notify(d.message, 'warning');
+      if (e === 'usage') addUsage(d.usage);
+    });
+    const c2 = storage.get(currentId);
+    if (c2?.messages[msgIdx]?.stage1) { c2.messages[msgIdx].stage1[slotIdx] = { model: modelName, response: content || 'Error: no response.', loading: false }; storage.save(c2); setConversation({ ...c2 }); }
+  };
+
+  const handleChangeModel = async (msgIdx, slotIdx, oldModel, newModel) => {
+    if (!currentId || !isConfigured || !newModel || newModel === oldModel) return;
+    const conv = storage.get(currentId);
+    if (!conv?.messages[msgIdx]?.stage1) return;
+    conv.messages[msgIdx].stage1[slotIdx] = { model: newModel, response: null, loading: true };
+    storage.save(conv); setConversation({ ...conv });
+    const userMsg = conv.messages.slice(0, msgIdx).reverse().find(m => m.role === 'user');
+    if (!userMsg) return;
+    const council = new Council(apiKey, models, chairman, localAiUrl);
+    const history = council.buildHistory(conv.messages.slice(0, msgIdx - 1));
+    const content = await council.querySingle(newModel, userMsg.content, [], history, (e, d) => {
+      if (e === 'warning') notify(d.message, 'warning');
+      if (e === 'usage') addUsage(d.usage);
+    });
+    const c2 = storage.get(currentId);
+    if (c2?.messages[msgIdx]?.stage1) { c2.messages[msgIdx].stage1[slotIdx] = { model: newModel, response: content || 'Error: no response.', loading: false }; storage.save(c2); setConversation({ ...c2 }); }
+  };
+
+  return (
+    <div className="app">
+      <button className="ham-btn" onClick={() => setSidebarOpen(!sidebarOpen)}>☰</button>
+      <Sidebar convs={convs} currentId={currentId} costData={costData}
+        onSelect={id => { setCurrentId(id); setSidebarOpen(false); }}
+        onNew={() => { const c = storage.create(); setConvs(storage.list()); setCurrentId(c.id); setSidebarOpen(false); }}
+        onDelete={id => { storage.delete(id); setConvs(storage.list()); if (currentId === id) setCurrentId(null); }}
+        onSettings={() => { setShowSettings(true); setSidebarOpen(false); }}
+        onExport={() => { setShowExport(true); setSidebarOpen(false); }}
+        isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+      <ChatInterface conversation={conversation} onSend={handleSend} isLoading={loading}
+        convUsage={currentId ? convUsage[currentId] : null}
+        onStop={handleStop} onRedo={handleRedo} onChangeModel={handleChangeModel} />
+      {showSettings && <SettingsModal onClose={() => setShowSettings(false)} />}
+      {showExport && <ExportImportModal onClose={() => setShowExport(false)} costData={costData} />}
+      {showIntro && <IntroModal onClose={() => { localStorage.setItem('llm_council_intro_seen','true'); setShowIntro(false); if (!isConfigured) setShowSettings(true); }} />}
+      {notif && <Notification message={notif.message} type={notif.type} onClose={() => setNotif(null)} />}
+    </div>
+  );
+}
+
+// ── Render ─────────────────────────────────────────────────
+ReactDOM.createRoot(document.getElementById('root')).render(
+  <SettingsProvider><App /></SettingsProvider>
+);
+</script>
+</body>
+</html>

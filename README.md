@@ -1,3 +1,7 @@
+## Try it out here
+
+[https://council.jon.io](https://council.jon.io)
+
 # LLM Council (Client-Side Edition)
 
 A backend-free, client-side only version of the [LLM Council](https://github.com/karpathy/llm-council).

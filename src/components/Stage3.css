@@ -1,25 +1,141 @@
+/* ═══════════════════════════════
+   STAGE 3 — Council Verdict Panel
+   ═══════════════════════════════ */
+
 .stage3 {
-  background: #f0fff0;
-  border-color: #c8e6c8;
+  background: transparent;
+  border: none;
+  padding: 0;
+  margin: 16px 0;
 }
 
-.final-response {
-  background: #ffffff;
-  padding: 20px;
-  border-radius: 6px;
-  border: 1px solid #c8e6c8;
+.arena-label--stage3 {
+  background: #1a2e2a !important;
+  color: #4ae8c0 !important;
 }
 
-.chairman-label {
-  color: #2d8a2d;
+.chairman-badge {
+  color: #4ae8c0;
+  font-family: 'Menlo', 'Monaco', 'Courier New', monospace;
   font-size: 12px;
-  font-family: monospace;
-  margin-bottom: 12px;
-  font-weight: 600;
 }
 
-.final-text {
-  color: #333;
-  line-height: 1.7;
-  font-size: 15px;
+/* Verdict panel */
+.verdict-panel {
+  background: #0a0e0d;
+  border: 2px solid #1a3a30;
+  border-top: 3px solid #4ae8c0;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.verdict-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 14px;
+  background: #0f1a17;
+  border-bottom: 1px solid #1a3a30;
+}
+
+.verdict-title-text {
+  font-family: 'Menlo', 'Monaco', 'Courier New', monospace;
+  font-size: 11px;
+  font-weight: 700;
+  color: #4ae8c0;
+  letter-spacing: 2px;
+}
+
+.verdict-model-full {
+  font-family: 'Menlo', 'Monaco', 'Courier New', monospace;
+  font-size: 10px;
+  color: #2a4a40;
+}
+
+.verdict-content {
+  padding: 18px 20px;
+}
+
+/* Markdown inside verdict panel — dark with teal accent */
+.verdict-markdown {
+  font-size: 14px;
+  line-height: 1.75;
+  color: #d0ede8;
+}
+
+.verdict-markdown p { color: #d0ede8; margin-bottom: 12px; }
+.verdict-markdown p:last-child { margin-bottom: 0; }
+
+.verdict-markdown h1,
+.verdict-markdown h2,
+.verdict-markdown h3 {
+  color: #e8f8f5;
+  font-size: 14px;
+  font-weight: 700;
+  margin: 16px 0 8px;
+}
+
+.verdict-markdown code {
+  background: #0f1f1c;
+  color: #4ae8c0;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-family: 'Menlo', 'Monaco', 'Courier New', monospace;
+  font-size: 12px;
+}
+
+.verdict-markdown pre {
+  background: #0a1210;
+  border: 1px solid #1a3a30;
+  padding: 12px;
+  border-radius: 4px;
+  overflow-x: auto;
+  margin-bottom: 12px;
+}
+
+.verdict-markdown pre code {
+  background: transparent;
+  padding: 0;
+  color: #80e8c8;
+}
+
+.verdict-markdown ul,
+.verdict-markdown ol {
+  color: #d0ede8;
+  padding-left: 22px;
+  margin-bottom: 12px;
+}
+
+.verdict-markdown li { margin-bottom: 5px; }
+.verdict-markdown strong { color: #e8f8f5; font-weight: 600; }
+.verdict-markdown em { color: #a8d8d0; }
+
+.verdict-markdown blockquote {
+  border-left: 2px solid #1a4a3a;
+  margin: 0 0 12px 0;
+  padding: 4px 14px;
+  color: #7abfb5;
+}
+
+.verdict-markdown a { color: #4ae8c0; text-decoration: none; }
+.verdict-markdown a:hover { text-decoration: underline; }
+
+.verdict-markdown table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 12px;
+  font-size: 13px;
+}
+
+.verdict-markdown th,
+.verdict-markdown td {
+  border: 1px solid #1a3a30;
+  padding: 6px 10px;
+  color: #d0ede8;
+}
+
+.verdict-markdown th {
+  background: #0f1f1c;
+  color: #4ae8c0;
+  font-weight: 600;
 }

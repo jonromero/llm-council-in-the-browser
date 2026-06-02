@@ -2,98 +2,159 @@ import { useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import './Stage2.css';
 
+const PANEL_COLORS = [
+  '#e8894a', '#4a9be8', '#c778dd', '#7ec849',
+  '#e8d84a', '#e84a7e', '#4ae8d8', '#a0a0a0',
+];
+
+const MEDAL = ['🥇', '🥈', '🥉'];
+
+function shortName(model) {
+  return model.split('/').pop() || model;
+}
+
 function deAnonymizeText(text, labelToModel) {
   if (!labelToModel) return text;
-
   let result = text;
-  // Replace each "Response X" with the actual model name
   Object.entries(labelToModel).forEach(([label, model]) => {
-    const modelShortName = model.split('/')[1] || model;
-    result = result.replace(new RegExp(label, 'g'), `**${modelShortName}**`);
+    const name = shortName(model);
+    result = result.replace(new RegExp(label, 'g'), `**${name}**`);
   });
   return result;
 }
 
-export default function Stage2({ rankings, labelToModel, aggregateRankings }) {
-  const [activeTab, setActiveTab] = useState(0);
+// Maps model name → color index from the stage1 labelling
+function modelColorIndex(model, aggregateRankings) {
+  if (!aggregateRankings) return 0;
+  const idx = aggregateRankings.findIndex(a => a.model === model);
+  return idx >= 0 ? idx : 0;
+}
 
-  if (!rankings || rankings.length === 0) {
-    return null;
-  }
+export default function Stage2({ rankings, labelToModel, aggregateRankings }) {
+  const [openPanel, setOpenPanel] = useState(null); // index of expanded eval panel
+
+  if (!rankings || rankings.length === 0) return null;
+
+  // Build ordered list by average rank for the leaderboard
+  const ordered = aggregateRankings
+    ? [...aggregateRankings].sort((a, b) => a.average_rank - b.average_rank)
+    : [];
 
   return (
     <div className="stage stage2">
-      <h3 className="stage-title">Stage 2: Peer Rankings</h3>
-
-      <h4>Raw Evaluations</h4>
-      <p className="stage-description">
-        Each model evaluated all responses (anonymized as Response A, B, C, etc.) and provided rankings.
-        Below, model names are shown in <strong>bold</strong> for readability, but the original evaluation used anonymous labels.
-      </p>
-
-      <div className="tabs">
-        {rankings.map((rank, index) => (
-          <button
-            key={index}
-            className={`tab ${activeTab === index ? 'active' : ''}`}
-            onClick={() => setActiveTab(index)}
-          >
-            {rank.model.split('/')[1] || rank.model}
-          </button>
-        ))}
+      {/* ── Section header ── */}
+      <div className="arena-header">
+        <span className="arena-label arena-label--stage2">STAGE 2</span>
+        <span className="arena-title">─ Peer Rankings</span>
+        <span className="arena-count">{rankings.length} evaluators</span>
       </div>
 
-      <div className="tab-content">
-        <div className="ranking-model">
-          {rankings[activeTab].model}
-        </div>
-        <div className="ranking-content markdown-content">
-          <ReactMarkdown>
-            {deAnonymizeText(rankings[activeTab].ranking, labelToModel)}
-          </ReactMarkdown>
-        </div>
-
-        {rankings[activeTab].parsed_ranking &&
-         rankings[activeTab].parsed_ranking.length > 0 && (
-          <div className="parsed-ranking">
-            <strong>Extracted Ranking:</strong>
-            <ol>
-              {rankings[activeTab].parsed_ranking.map((label, i) => (
-                <li key={i}>
-                  {labelToModel && labelToModel[label]
-                    ? labelToModel[label].split('/')[1] || labelToModel[label]
-                    : label}
-                </li>
-              ))}
-            </ol>
+      {/* ── Leaderboard ── */}
+      {ordered.length > 0 && (
+        <div className="leaderboard">
+          <div className="leaderboard-title">
+            <span className="lb-icon">▲</span> LEADERBOARD
           </div>
-        )}
-      </div>
-
-      {aggregateRankings && aggregateRankings.length > 0 && (
-        <div className="aggregate-rankings">
-          <h4>Aggregate Rankings (Street Cred)</h4>
-          <p className="stage-description">
-            Combined results across all peer evaluations (lower score is better):
-          </p>
-          <div className="aggregate-list">
-            {aggregateRankings.map((agg, index) => (
-              <div key={index} className="aggregate-item">
-                <span className="rank-position">#{index + 1}</span>
-                <span className="rank-model">
-                  {agg.model.split('/')[1] || agg.model}
+          {ordered.map((agg, rank) => {
+            const colorIdx = aggregateRankings
+              ? aggregateRankings.findIndex(a => a.model === agg.model)
+              : rank;
+            const color = PANEL_COLORS[colorIdx % PANEL_COLORS.length];
+            const barWidth = Math.max(10, 100 - (agg.average_rank - 1) * 20);
+            return (
+              <div key={agg.model} className="lb-row">
+                <span className="lb-rank">
+                  {rank < 3 ? MEDAL[rank] : `#${rank + 1}`}
                 </span>
-                <span className="rank-score">
-                  Avg: {agg.average_rank.toFixed(2)}
+                <span className="lb-model" style={{ color }}>
+                  {shortName(agg.model)}
                 </span>
-                <span className="rank-count">
-                  ({agg.rankings_count} votes)
+                <div className="lb-bar-track">
+                  <div
+                    className="lb-bar-fill"
+                    style={{ width: `${barWidth}%`, background: color }}
+                  />
+                </div>
+                <span className="lb-score" style={{ color }}>
+                  {agg.average_rank.toFixed(2)}
+                </span>
+                <span className="lb-votes">
+                  {agg.rankings_count}v
                 </span>
               </div>
-            ))}
-          </div>
+            );
+          })}
         </div>
       )}
+
+      {/* ── Raw evaluations (collapsible per evaluator) ── */}
+      <div className="evals-header">
+        Raw Evaluations
+        <span className="evals-hint">click to expand</span>
+      </div>
+
+      <div className="evals-list">
+        {rankings.map((rank, index) => {
+          const color = PANEL_COLORS[index % PANEL_COLORS.length];
+          const isOpen = openPanel === index;
+          return (
+            <div
+              key={index}
+              className={`eval-card ${isOpen ? 'eval-card--open' : ''}`}
+              style={{ '--eval-color': color }}
+            >
+              <button
+                className="eval-card-header"
+                onClick={() => setOpenPanel(isOpen ? null : index)}
+              >
+                <span className="eval-model-name" style={{ color }}>
+                  {shortName(rank.model)}
+                </span>
+                {rank.parsed_ranking && rank.parsed_ranking.length > 0 && (
+                  <span className="eval-mini-ranking">
+                    {rank.parsed_ranking.map((label, i) => (
+                      <span key={i} className="eval-mini-badge" style={{ opacity: 1 - i * 0.2 }}>
+                        {labelToModel && labelToModel[label]
+                          ? shortName(labelToModel[label])
+                          : label}
+                      </span>
+                    ))}
+                  </span>
+                )}
+                <span className="eval-chevron">{isOpen ? '▲' : '▼'}</span>
+              </button>
+
+              {isOpen && (
+                <div className="eval-card-body">
+                  <div className="eval-full-text panel-markdown markdown-content">
+                    <ReactMarkdown>
+                      {deAnonymizeText(rank.ranking, labelToModel)}
+                    </ReactMarkdown>
+                  </div>
+                  {rank.parsed_ranking && rank.parsed_ranking.length > 0 && (
+                    <div className="eval-parsed">
+                      <span className="eval-parsed-label">Extracted ranking:</span>
+                      {rank.parsed_ranking.map((label, i) => {
+                        const modelName = labelToModel && labelToModel[label]
+                          ? shortName(labelToModel[label]) : label;
+                        const cIdx = aggregateRankings
+                          ? aggregateRankings.findIndex(a => a.model === (labelToModel && labelToModel[label]))
+                          : i;
+                        const c = PANEL_COLORS[cIdx >= 0 ? cIdx : i];
+                        return (
+                          <span key={i} className="eval-parsed-item" style={{ color: c }}>
+                            {i + 1}. {modelName}
+                          </span>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }

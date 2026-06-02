@@ -2,7 +2,13 @@
 /**
  * Service for Council Orchestration Logic.
  * Ports backend/council.py and backend/openrouter.py to client-side JS.
+ *
+ * Now supports:
+ *  - Document attachments (images + PDFs) injected into model queries
+ *  - Conversation history for multi-turn follow-ups
  */
+
+import { buildMessages } from './DocumentService';
 
 const OPENROUTER_API_URL = "https://openrouter.ai/api/v1/chat/completions";
 
@@ -45,8 +51,6 @@ export class CouncilService {
                     const msg = `Rate limit hit for ${model}, retrying in ${Math.pow(2, i + 1)}s...`;
                     console.warn(msg);
                     if (onEvent) onEvent('warning', { message: msg });
-
-                    // Exponential backoff: 2s, 4s, 8s
                     const backoff = Math.pow(2, i + 1) * 1000;
                     await new Promise(resolve => setTimeout(resolve, backoff));
                     continue;
@@ -56,7 +60,7 @@ export class CouncilService {
                     const errorMsg = `Error querying ${model}: ${response.statusText}`;
                     console.error(errorMsg);
                     if (onEvent) onEvent('warning', { message: errorMsg });
-                    return null; // Don't retry other errors for now
+                    return null;
                 }
 
                 const data = await response.json();
@@ -101,30 +105,47 @@ export class CouncilService {
     }
 
     /**
-     * Stage 1: Collect individual responses from all council models.
+     * Build conversation history suitable for injection into model prompts.
+     * Only includes settled (non-loading) messages and summarises assistant turns
+     * as the Stage 3 final answer (most concise representation of prior council output).
+     *
+     * @param {Array} previousMessages – messages array from the conversation (excluding current)
+     * @returns {Array} OpenAI-format history messages
      */
+    buildHistory(previousMessages) {
+        const history = [];
+        for (const msg of previousMessages) {
+            if (msg.role === 'user') {
+                // Use plain text content (attachments were already resolved in prior turn)
+                history.push({ role: 'user', content: msg.content || '' });
+            } else if (msg.role === 'assistant' && msg.stage3) {
+                // Represent the full council response as the chairman's final synthesis
+                history.push({
+                    role: 'assistant',
+                    content: msg.stage3.response || '',
+                });
+            }
+            // Skip loading / incomplete assistant messages
+        }
+        return history;
+    }
+
     /**
      * Stage 1: Collect individual responses from all council models.
      */
-    async stage1_collect_responses(userQuery, onEvent) {
-        const messages = [{ role: 'user', content: userQuery }];
+    async stage1_collect_responses(userQuery, attachments, conversationHistory, onEvent) {
+        const messages = buildMessages(userQuery, attachments, conversationHistory);
         const responses = await this.queryModelsParallel(this.councilModels, messages, onEvent);
 
         const results = [];
         for (const [model, response] of Object.entries(responses)) {
             if (response) {
-                results.push({
-                    model: model,
-                    response: response.content,
-                });
+                results.push({ model, response: response.content });
             }
         }
         return results;
     }
 
-    /**
-     * Stage 2: Each model ranks the anonymized responses.
-     */
     /**
      * Stage 2: Each model ranks the anonymized responses.
      */
@@ -171,6 +192,7 @@ FINAL RANKING:
 
 Now provide your evaluation and ranking:`;
 
+        // Stage 2 is always a text-only prompt (no attachments/history needed)
         const messages = [{ role: 'user', content: rankingPrompt }];
         const responses = await this.queryModelsParallel(this.councilModels, messages, onEvent);
 
@@ -179,7 +201,7 @@ Now provide your evaluation and ranking:`;
             if (response) {
                 const fullText = response.content;
                 stage2Results.push({
-                    model: model,
+                    model,
                     ranking: fullText,
                     parsed_ranking: this.parseRankingFromText(fullText),
                 });
@@ -190,27 +212,23 @@ Now provide your evaluation and ranking:`;
     }
 
     parseRankingFromText(text) {
-        // Look for FINAL RANKING section
         let rankingSection = text;
         if (text.includes("FINAL RANKING:")) {
             rankingSection = text.split("FINAL RANKING:")[1];
         }
-
-        // Look for "Response X"
         const matches = rankingSection.match(/Response [A-Z]/g);
         return matches || [];
     }
 
     calculateAggregateRankings(stage2Results, labelToModel) {
-        const modelPositions = {}; // { modelName: [rank1, rank2...] }
+        const modelPositions = {};
 
         stage2Results.forEach(result => {
-            const parsed = result.parsed_ranking;
-            parsed.forEach((label, index) => {
+            result.parsed_ranking.forEach((label, index) => {
                 const modelName = labelToModel[label];
                 if (modelName) {
                     if (!modelPositions[modelName]) modelPositions[modelName] = [];
-                    modelPositions[modelName].push(index + 1); // 1-based rank
+                    modelPositions[modelName].push(index + 1);
                 }
             });
         });
@@ -219,9 +237,9 @@ Now provide your evaluation and ranking:`;
         for (const [model, positions] of Object.entries(modelPositions)) {
             const avg = positions.reduce((a, b) => a + b, 0) / positions.length;
             aggregate.push({
-                model: model,
+                model,
                 average_rank: parseFloat(avg.toFixed(2)),
-                rankings_count: positions.length
+                rankings_count: positions.length,
             });
         }
 
@@ -232,7 +250,7 @@ Now provide your evaluation and ranking:`;
     /**
      * Stage 3: Chairman synthesizes final response.
      */
-    async stage3_synthesize_final(userQuery, stage1Results, stage2Results, onEvent) {
+    async stage3_synthesize_final(userQuery, stage1Results, stage2Results, conversationHistory, onEvent) {
         const stage1Text = stage1Results.map(r =>
             `Model: ${r.model}\nResponse: ${r.response}`
         ).join('\n\n');
@@ -258,7 +276,12 @@ Your task as Chairman is to synthesize all of this information into a single, co
 
 Provide a clear, well-reasoned final answer that represents the council's collective wisdom:`;
 
-        const messages = [{ role: 'user', content: chairmanPrompt }];
+        // Include conversation history so the chairman understands follow-up context
+        const messages = [
+            ...conversationHistory,
+            { role: 'user', content: chairmanPrompt },
+        ];
+
         const response = await this.queryModel(this.chairmanModel, messages, onEvent);
 
         if (!response) {
@@ -268,10 +291,7 @@ Provide a clear, well-reasoned final answer that represents the council's collec
             };
         }
 
-        return {
-            model: this.chairmanModel,
-            response: response.content
-        };
+        return { model: this.chairmanModel, response: response.content };
     }
 
     async generateConversationTitle(userQuery) {
@@ -283,8 +303,7 @@ Question: ${userQuery}
 Title:`;
 
         const messages = [{ role: 'user', content: titlePrompt }];
-        // Use a cheap model for titles
-        const response = await this.queryModel("z-ai/glm-4.5-air:free", messages, 30000);
+        const response = await this.queryModel("z-ai/glm-4.5-air:free", messages, null, 30000);
 
         if (!response) return "New Conversation";
 
@@ -296,12 +315,38 @@ Title:`;
     }
 
     /**
-     * Runs the full process and calls onEvent for updates
+     * Query a single model and return its response content.
+     * Used for the per-panel redo / change-model feature.
+     *
+     * @param {string} model
+     * @param {string} userQuery
+     * @param {Array}  attachments
+     * @param {Array}  conversationHistory
+     * @param {Function} onEvent
      */
-    async runFullCouncil(userQuery, onEvent) {
+    async querySingleModel(model, userQuery, attachments = [], conversationHistory = [], onEvent) {
+        const messages = buildMessages(userQuery, attachments, conversationHistory);
+        const response = await this.queryModel(model, messages, onEvent);
+        return response ? response.content : null;
+    }
+
+    /**
+     * Runs the full council process and calls onEvent for updates.
+     *
+     * @param {string} userQuery
+     * @param {Function} onEvent
+     * @param {Array}  attachments        – processed attachment objects from DocumentService
+     * @param {Array}  previousMessages   – prior messages for multi-turn context
+     */
+    async runFullCouncil(userQuery, onEvent, attachments = [], previousMessages = []) {
+        // Build conversation history from prior messages
+        const conversationHistory = this.buildHistory(previousMessages);
+
         // Stage 1
         onEvent('stage1_start');
-        const stage1Results = await this.stage1_collect_responses(userQuery, onEvent);
+        const stage1Results = await this.stage1_collect_responses(
+            userQuery, attachments, conversationHistory, onEvent
+        );
         if (stage1Results.length === 0) {
             onEvent('error', { message: 'All models failed to respond' });
             return;
@@ -310,7 +355,9 @@ Title:`;
 
         // Stage 2
         onEvent('stage2_start');
-        const { stage2Results, labelToModel } = await this.stage2_collect_rankings(userQuery, stage1Results, onEvent);
+        const { stage2Results, labelToModel } = await this.stage2_collect_rankings(
+            userQuery, stage1Results, onEvent
+        );
         const aggregateRankings = this.calculateAggregateRankings(stage2Results, labelToModel);
 
         onEvent('stage2_complete', {
@@ -320,13 +367,17 @@ Title:`;
 
         // Stage 3
         onEvent('stage3_start');
-        const stage3Result = await this.stage3_synthesize_final(userQuery, stage1Results, stage2Results, onEvent);
+        const stage3Result = await this.stage3_synthesize_final(
+            userQuery, stage1Results, stage2Results, conversationHistory, onEvent
+        );
         onEvent('stage3_complete', stage3Result);
 
-        // Title Generation (Parallel-ish)
-        this.generateConversationTitle(userQuery).then(title => {
-            onEvent('title_complete', title);
-        });
+        // Title generation (only on first message)
+        if (previousMessages.length === 0) {
+            this.generateConversationTitle(userQuery).then(title => {
+                onEvent('title_complete', title);
+            });
+        }
 
         onEvent('complete');
     }

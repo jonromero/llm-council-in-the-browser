@@ -155,13 +155,20 @@
   bottom: 0;
   left: 0;
   right: 0;
-  padding: 24px;
+  padding: 16px 24px 24px;
   background: linear-gradient(transparent, #f5f5f5 20%);
   display: flex;
-  justify-content: center;
-  gap: 12px;
+  flex-direction: column;
+  gap: 8px;
   max-width: 900px;
   margin: 0 auto;
+  width: 100%;
+}
+
+.input-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
   width: 100%;
 }
 
@@ -301,4 +308,156 @@
   font-size: 14px;
   margin: 0;
   line-height: 1.4;
+}
+
+/* ── File upload button ── */
+.upload-btn {
+  background: #f0f0f0;
+  border: 2px solid #e0e0e0;
+  border-radius: 10px;
+  width: 44px;
+  height: 44px;
+  font-size: 20px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background 0.2s, border-color 0.2s;
+  align-self: flex-end;
+  margin-bottom: 2px;
+}
+
+.upload-btn:hover:not(:disabled) {
+  background: #e5e5e5;
+  border-color: #2563eb;
+}
+
+.upload-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* ── Attachment previews ── */
+.attachments-preview {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 8px 0 4px;
+}
+
+.attachment-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #e8f0fe;
+  border: 1px solid #c5d5f5;
+  border-radius: 8px;
+  padding: 4px 8px;
+  font-size: 12px;
+  color: #1a56db;
+  max-width: 200px;
+}
+
+.attachment-chip--sent {
+  background: #f0f4ff;
+  border-color: #c5d5f5;
+  pointer-events: none;
+}
+
+.attachment-chip--loading {
+  background: #f5f5f5;
+  border-color: #ddd;
+  color: #666;
+}
+
+.attachment-thumb {
+  width: 28px;
+  height: 28px;
+  object-fit: cover;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.attachment-icon {
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.attachment-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+}
+
+.attachment-remove {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+  color: #666;
+  padding: 0;
+  flex-shrink: 0;
+}
+
+.attachment-remove:hover {
+  color: #e53e3e;
+}
+
+/* ── Attachment chips in sent messages ── */
+.message-attachments {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+/* ── Drag-and-drop overlay ── */
+.drop-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(37, 99, 235, 0.08);
+  border: 3px dashed #2563eb;
+  border-radius: 12px;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.drop-overlay-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  color: #2563eb;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.drop-icon {
+  font-size: 48px;
+}
+
+.chat-interface.dragging {
+  position: relative;
+}
+
+/* Empty state hint */
+.empty-hint {
+  font-size: 13px;
+  color: #999;
+  margin-top: 4px;
+}
+
+/* Small spinner variant */
+.spinner--small {
+  width: 14px;
+  height: 14px;
+  border-width: 2px;
+  border-color: rgba(0,0,0,0.1);
+  border-top-color: #2563eb;
 }

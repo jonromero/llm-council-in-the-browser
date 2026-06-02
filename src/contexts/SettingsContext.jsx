@@ -33,6 +33,14 @@ export const SettingsProvider = ({ children }) => {
         return localStorage.getItem('chairmanModel') || DEFAULT_CHAIRMAN_MODEL;
     });
 
+    const [supabaseUrl, setSupabaseUrl] = useState(() => {
+        return localStorage.getItem('supabaseUrl') || '';
+    });
+
+    const [supabaseAnonKey, setSupabaseAnonKey] = useState(() => {
+        return localStorage.getItem('supabaseAnonKey') || '';
+    });
+
     useEffect(() => {
         if (openRouterApiKey) {
             localStorage.setItem('openRouterApiKey', openRouterApiKey);
@@ -49,6 +57,22 @@ export const SettingsProvider = ({ children }) => {
         localStorage.setItem('chairmanModel', chairmanModel);
     }, [chairmanModel]);
 
+    useEffect(() => {
+        if (supabaseUrl) {
+            localStorage.setItem('supabaseUrl', supabaseUrl);
+        } else {
+            localStorage.removeItem('supabaseUrl');
+        }
+    }, [supabaseUrl]);
+
+    useEffect(() => {
+        if (supabaseAnonKey) {
+            localStorage.setItem('supabaseAnonKey', supabaseAnonKey);
+        } else {
+            localStorage.removeItem('supabaseAnonKey');
+        }
+    }, [supabaseAnonKey]);
+
     const value = {
         openRouterApiKey,
         setOpenRouterApiKey,
@@ -56,7 +80,12 @@ export const SettingsProvider = ({ children }) => {
         setCouncilModels,
         chairmanModel,
         setChairmanModel,
+        supabaseUrl,
+        setSupabaseUrl,
+        supabaseAnonKey,
+        setSupabaseAnonKey,
         isConfigured: !!openRouterApiKey,
+        isSupabaseConfigured: !!(supabaseUrl && supabaseAnonKey),
     };
 
     return (

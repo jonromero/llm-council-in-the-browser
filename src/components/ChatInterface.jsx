@@ -3,15 +3,26 @@ import ReactMarkdown from 'react-markdown';
 import Stage1 from './Stage1';
 import Stage2 from './Stage2';
 import Stage3 from './Stage3';
+import { processFiles } from '../services/DocumentService';
 import './ChatInterface.css';
+
+const ACCEPTED_FILE_TYPES = 'image/*,application/pdf,text/plain,text/markdown,text/csv,application/json';
+const MAX_FILE_SIZE_MB = 20;
 
 export default function ChatInterface({
   conversation,
   onSendMessage,
   isLoading,
+  onRedoModel,
+  onChangeModel,
 }) {
   const [input, setInput] = useState('');
+  const [attachments, setAttachments] = useState([]); // processed attachment objects
+  const [rawFiles, setRawFiles] = useState([]);       // original File objects for Supabase upload
+  const [isProcessingFiles, setIsProcessingFiles] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
   const messagesEndRef = useRef(null);
+  const fileInputRef = useRef(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -21,20 +32,65 @@ export default function ChatInterface({
     scrollToBottom();
   }, [conversation]);
 
+  const handleFilesSelected = async (files) => {
+    if (!files || files.length === 0) return;
+
+    const validFiles = Array.from(files).filter(f => {
+      if (f.size > MAX_FILE_SIZE_MB * 1024 * 1024) {
+        alert(`"${f.name}" exceeds the ${MAX_FILE_SIZE_MB}MB limit and was skipped.`);
+        return false;
+      }
+      return true;
+    });
+
+    if (validFiles.length === 0) return;
+
+    setIsProcessingFiles(true);
+    try {
+      const processed = await processFiles(validFiles);
+      setAttachments(prev => [...prev, ...processed]);
+      setRawFiles(prev => [...prev, ...validFiles]);
+    } catch (err) {
+      console.error('File processing error:', err);
+    } finally {
+      setIsProcessingFiles(false);
+    }
+  };
+
+  const removeAttachment = (index) => {
+    setAttachments(prev => prev.filter((_, i) => i !== index));
+    setRawFiles(prev => prev.filter((_, i) => i !== index));
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (input.trim() && !isLoading) {
-      onSendMessage(input);
+    if ((input.trim() || attachments.length > 0) && !isLoading && !isProcessingFiles) {
+      onSendMessage(input, attachments, rawFiles);
       setInput('');
+      setAttachments([]);
+      setRawFiles([]);
+      if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
 
   const handleKeyDown = (e) => {
-    // Submit on Enter (without Shift)
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSubmit(e);
     }
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = () => setIsDragging(false);
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    setIsDragging(false);
+    handleFilesSelected(e.dataTransfer.files);
   };
 
   const handlePrint = (content) => {
@@ -62,30 +118,21 @@ export default function ChatInterface({
             h2 { font-size: 18px; margin-top: 20px; color: #333; }
             pre { background: #f5f5f5; padding: 10px; border-radius: 4px; overflow-x: auto; }
             code { font-family: 'Menlo', 'Monaco', 'Courier New', monospace; font-size: 0.9em; }
-            @media print {
-              body { margin: 0; padding: 0.5cm; }
-            }
+            @media print { body { margin: 0; padding: 0.5cm; } }
           </style>
         </head>
         <body>
           <h1>LLM Council Final Report</h1>
-          <div class="content">
-            <!-- We'll use a simple pre-wrap for now to preserve formatting, or could import a markdown renderer cdn -->
-            <div style="white-space: pre-wrap;">${content.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div>
-          </div>
-          <script>
-            window.onload = function() {
-              window.print();
-              // Optional: window.close();
-            }
-          </script>
+          <div style="white-space: pre-wrap;">${content.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div>
+          <script>window.onload = function() { window.print(); }<\/script>
         </body>
       </html>
     `;
-
     printWindow.document.write(htmlContent);
     printWindow.document.close();
   };
+
+  const isInputDisabled = isLoading || isProcessingFiles;
 
   if (!conversation) {
     return (
@@ -99,7 +146,21 @@ export default function ChatInterface({
   }
 
   return (
-    <div className="chat-interface">
+    <div
+      className={`chat-interface ${isDragging ? 'dragging' : ''}`}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+    >
+      {isDragging && (
+        <div className="drop-overlay">
+          <div className="drop-overlay-content">
+            <span className="drop-icon">📎</span>
+            <span>Drop files here</span>
+          </div>
+        </div>
+      )}
+
       {isLoading && (
         <div className="processing-banner">
           <div className="banner-icon">⏳</div>
@@ -109,11 +170,13 @@ export default function ChatInterface({
           </div>
         </div>
       )}
+
       <div className="messages-container">
         {conversation.messages.length === 0 ? (
           <div className="empty-state">
             <h2>Ask the Council</h2>
             <p>Type your question below to consult multiple AI models</p>
+            <p className="empty-hint">You can also attach photos or PDFs as context 📎</p>
           </div>
         ) : (
           conversation.messages.map((msg, index) => (
@@ -122,6 +185,16 @@ export default function ChatInterface({
                 <div className="user-message">
                   <div className="message-label">You</div>
                   <div className="message-content">
+                    {/* Show attachment chips if any */}
+                    {msg.attachmentNames && msg.attachmentNames.length > 0 && (
+                      <div className="message-attachments">
+                        {msg.attachmentNames.map((name, i) => (
+                          <span key={i} className="attachment-chip attachment-chip--sent">
+                            📎 {name}
+                          </span>
+                        ))}
+                      </div>
+                    )}
                     <div className="markdown-content">
                       <ReactMarkdown>{msg.content}</ReactMarkdown>
                     </div>
@@ -131,16 +204,24 @@ export default function ChatInterface({
                 <div className="assistant-message">
                   <div className="message-label">LLM Council</div>
 
-                  {/* Stage 1 */}
                   {msg.loading?.stage1 && (
                     <div className="stage-loading">
                       <div className="spinner"></div>
                       <span>Running Stage 1: Collecting individual responses...</span>
                     </div>
                   )}
-                  {msg.stage1 && <Stage1 responses={msg.stage1} />}
+                  {msg.stage1 && (
+                    <Stage1
+                      responses={msg.stage1}
+                      onRedo={(slotIndex, modelName) =>
+                        onRedoModel && onRedoModel(index, slotIndex, modelName)
+                      }
+                      onChangeModel={(slotIndex, oldModel, newModel) =>
+                        onChangeModel && onChangeModel(index, slotIndex, oldModel, newModel)
+                      }
+                    />
+                  )}
 
-                  {/* Stage 2 */}
                   {msg.loading?.stage2 && (
                     <div className="stage-loading">
                       <div className="spinner"></div>
@@ -155,7 +236,6 @@ export default function ChatInterface({
                     />
                   )}
 
-                  {/* Stage 3 */}
                   {msg.loading?.stage3 && (
                     <div className="stage-loading">
                       <div className="spinner"></div>
@@ -190,26 +270,85 @@ export default function ChatInterface({
         <div ref={messagesEndRef} />
       </div>
 
-      {conversation.messages.length === 0 && (
-        <form className="input-form" onSubmit={handleSubmit}>
+      {/* ── Input form – always visible ── */}
+      <form className="input-form" onSubmit={handleSubmit}>
+        {/* Attachment previews */}
+        {attachments.length > 0 && (
+          <div className="attachments-preview">
+            {attachments.map((att, i) => (
+              <div key={i} className="attachment-chip">
+                {att.type === 'image' ? (
+                  <img src={att.content} alt={att.name} className="attachment-thumb" />
+                ) : (
+                  <span className="attachment-icon">
+                    {att.mimeType === 'application/pdf' ? '📄' : '📝'}
+                  </span>
+                )}
+                <span className="attachment-name" title={att.name}>
+                  {att.name.length > 20 ? att.name.slice(0, 18) + '…' : att.name}
+                </span>
+                <button
+                  type="button"
+                  className="attachment-remove"
+                  onClick={() => removeAttachment(i)}
+                  title="Remove"
+                >
+                  ×
+                </button>
+              </div>
+            ))}
+            {isProcessingFiles && (
+              <div className="attachment-chip attachment-chip--loading">
+                <div className="spinner spinner--small"></div>
+                <span>Processing…</span>
+              </div>
+            )}
+          </div>
+        )}
+
+        <div className="input-row">
+          {/* File upload button */}
+          <button
+            type="button"
+            className="upload-btn"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={isInputDisabled}
+            title="Attach file (image, PDF, text)"
+          >
+            📎
+          </button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept={ACCEPTED_FILE_TYPES}
+            multiple
+            style={{ display: 'none' }}
+            onChange={(e) => handleFilesSelected(e.target.files)}
+          />
+
           <textarea
             className="message-input"
-            placeholder="Ask your question... (Shift+Enter for new line, Enter to send)"
+            placeholder={
+              conversation.messages.length === 0
+                ? 'Ask your question… (Shift+Enter for new line, Enter to send)'
+                : 'Ask a follow-up question… (full council re-run)'
+            }
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            disabled={isLoading}
+            disabled={isInputDisabled}
             rows={3}
           />
+
           <button
             type="submit"
             className="send-button"
-            disabled={!input.trim() || isLoading}
+            disabled={(!input.trim() && attachments.length === 0) || isInputDisabled}
           >
-            Send
+            {isLoading ? '…' : 'Send'}
           </button>
-        </form>
-      )}
+        </div>
+      </form>
     </div>
   );
 }

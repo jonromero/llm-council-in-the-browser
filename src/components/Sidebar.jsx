@@ -1,4 +1,3 @@
-import { useState, useEffect } from 'react';
 import './Sidebar.css';
 
 export default function Sidebar({
@@ -16,24 +15,26 @@ export default function Sidebar({
       {isOpen && <div className="sidebar-overlay" onClick={onClose} />}
       <div className={`sidebar ${isOpen ? 'open' : ''}`}>
         <div className="sidebar-header">
-          <h1>LLM Council</h1>
+          <div className="sidebar-logo">
+            ~^
+            <span>LLM Council</span>
+          </div>
           <button className="btn-primary" onClick={onNewConversation}>
-            + New Conversation
+            New conversation
           </button>
           <button className="btn-secondary" onClick={onOpenSettings}>
-            ⚙️ Settings
+            Settings
           </button>
         </div>
 
         <div className="conversation-list">
           {conversations.length === 0 ? (
-            <div className="no-conversations">No conversations yet</div>
+            <div className="no-conversations">no conversations yet.</div>
           ) : (
             conversations.map((conv) => (
               <div
                 key={conv.id}
-                className={`conversation-item ${conv.id === currentConversationId ? 'active' : ''
-                  }`}
+                className={`conversation-item ${conv.id === currentConversationId ? 'active' : ''}`}
                 onClick={() => onSelectConversation(conv.id)}
               >
                 <div className="conversation-info">
@@ -41,7 +42,7 @@ export default function Sidebar({
                     {conv.title || 'New Conversation'}
                   </div>
                   <div className="conversation-meta">
-                    {conv.message_count} messages
+                    {conv.message_count} msg
                   </div>
                 </div>
 
@@ -63,18 +64,15 @@ export default function Sidebar({
         </div>
 
         <div className="sidebar-footer">
-          <div className="download-info">
-            💾 Save this page (Ctrl/Cmd+S) to run offline!
-          </div>
           <a
             href="https://github.com/jonromero/llm-council-in-the-browser"
             target="_blank"
             rel="noopener noreferrer"
             className="fork-link"
           >
-            ⭐ Fork me on GitHub
+            fork on github →
           </a>
-          <span className="footer-text">Client-side Edition</span>
+          <span className="footer-text">~^ client-side edition. all data stays in your browser.</span>
         </div>
       </div>
     </>

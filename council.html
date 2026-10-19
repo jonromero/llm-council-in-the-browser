@@ -295,6 +295,13 @@ input:focus,textarea:focus{border-color:var(--dim)}
   .input-wrap{padding:10px 16px 16px}
 }
 
+/* Sidebar: Pro is always one click away */
+.sb-pro{display:flex;flex-direction:column;gap:2px;border:1px solid var(--border2);background:var(--bg);padding:7px 9px;margin-bottom:10px;text-decoration:none;transition:border-color .15s}
+.sb-pro:hover{border-color:var(--dim)}
+.sb-pro-lbl{font-size:10px;font-weight:700;color:var(--text);letter-spacing:1px;text-transform:uppercase}
+.sb-pro-txt{font-size:10px;color:var(--faint);line-height:1.5}
+.sb-pro:hover .sb-pro-txt{color:var(--dim)}
+
 /* Quiet pro hint */
 .pro-hint{margin-top:22px;font-size:11px;color:var(--faint);max-width:460px;line-height:1.6}
 .pro-hint a{color:var(--dim)}
@@ -1333,6 +1340,10 @@ function Sidebar({ convs, currentId, onSelect, onNew, onDelete, onSettings, onEx
           ))}
         </div>
         <div className="sb-foot">
+          <a href={PRO_URL} target="_blank" rel="noopener" className="sb-pro">
+            <span className="sb-pro-lbl">⚡ llm council pro</span>
+            <span className="sb-pro-txt">no keys, no setup. 20 questions for $20 on Claude, GPT, Gemini &amp; Grok →</span>
+          </a>
           {totalTokens > 0 && (
             <div className="sb-cost">
               <span className="sb-cost-lbl">session usage</span>

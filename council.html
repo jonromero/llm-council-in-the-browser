@@ -295,6 +295,12 @@ input:focus,textarea:focus{border-color:var(--dim)}
   .input-wrap{padding:10px 16px 16px}
 }
 
+/* Quiet pro hint */
+.pro-hint{margin-top:22px;font-size:11px;color:var(--faint);max-width:460px;line-height:1.6}
+.pro-hint a{color:var(--dim)}
+.pro-hint-x{background:none;border:none;color:var(--faint);font-size:13px;margin-left:6px;padding:0 2px}
+.pro-hint-x:hover{color:var(--text)}
+
 /* Spinner */
 .spin{width:16px;height:16px;border:1px solid var(--border2);border-top-color:var(--dim);border-radius:50%;animation:spin .8s linear infinite;flex-shrink:0}
 @keyframes spin{to{transform:rotate(360deg)}}
@@ -324,6 +330,13 @@ const PC = ['#d4621a','#1a7ad4','#9a30b0','#2a8030','#b09020','#c02060','#1a9090
 const MEDALS = ['🥇','🥈','🥉'];
 const OPENROUTER = 'https://openrouter.ai/api/v1/chat/completions';
 const SHORT = m => m.split('/').pop() || m;
+
+// ── The paid version, mentioned once, quietly ─────────────
+// Shown under the API key field and as one faint line on new conversations.
+// Dismissible; never a popup. Numbers and models are subject to change.
+const PRO_URL = 'https://pro.council.jon.io/pricing?ref=free';
+const PRO_LINE = "don't want to manage keys? $20 gets you 20 questions on Claude Opus, Claude Sonnet, GPT, Gemini and Grok, already set up.";
+const LS_PRO_HINT = 'llm_council_pro_hint_dismissed';
 
 // ── Storage service (localStorage) ───────────────────────
 const LS_PRE = 'llm_council_conv_', LS_LIST = 'llm_council_conversations_list';
@@ -866,6 +879,7 @@ function SettingsModal({ onClose }) {
             <label>API Key</label>
             <input className="form-input" type="password" value={lKey} onChange={e => setLKey(e.target.value)} placeholder="sk-or-…" />
             <div className="help-text">stored locally in your browser. get one at <a href="https://openrouter.ai/keys" target="_blank" className="help-link">openrouter.ai/keys →</a></div>
+            <div className="help-text" style={{ marginTop: 8 }}>{PRO_LINE} <a href={PRO_URL} target="_blank" rel="noopener" className="help-link">see llm council pro →</a></div>
           </div>
           <div className="form-group">
             <label>Council Models (one per line)</label>
@@ -972,6 +986,19 @@ function IntroModal({ onClose }) {
   );
 }
 
+// ── Quiet mention of the paid version ──────────────────────
+function ProHint() {
+  const [hidden, setHidden] = useState(() => { try { return !!localStorage.getItem(LS_PRO_HINT); } catch { return false; } });
+  if (hidden) return null;
+  const dismiss = () => { try { localStorage.setItem(LS_PRO_HINT, '1'); } catch {} setHidden(true); };
+  return (
+    <div className="pro-hint">
+      {PRO_LINE} <a href={PRO_URL} target="_blank" rel="noopener">see llm council pro →</a>
+      <button className="pro-hint-x" onClick={dismiss} title="don't show again">×</button>
+    </div>
+  );
+}
+
 // ── Chat Interface ─────────────────────────────────────────
 const ACCEPT = 'image/*,application/pdf,text/plain,text/markdown,text/csv,application/json';
 
@@ -1059,6 +1086,7 @@ function ChatInterface({ conversation, onSend, isLoading, onStop, onRedo, onChan
             <div className="empty-logo">~^</div>
             <div>ask your question below</div>
             <div className="empty-hint">attach photos or PDFs for context</div>
+            <ProHint />
           </div>
         ) : conversation.messages.map((msg, idx) => (
           <div key={idx} className="msg-group">
